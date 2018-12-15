@@ -30,7 +30,6 @@ executable QuerySFZD
                      , blaze-html
                      , blaze-markup
                      , bytestring
-                     , http-api-data
                      , http-client
                      , servant
                      , servant-blaze

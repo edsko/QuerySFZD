@@ -16,5 +16,10 @@ baseUrl = BaseUrl {
     , baseUrlPath   = ""
     }
 
-query :: SingleChar -> ClientM Results
+query :: Query
+      -> SingleChar
+      -> Author
+      -> Style
+      -> Maybe Referer
+      -> ClientM Results
 query = client api
