@@ -25,6 +25,7 @@ executable QuerySFZD
                        QuerySFZD.API.Theirs.Common
                        QuerySFZD.Client.CiDianWang
                        QuerySFZD.Server
+                       QuerySFZD.Util
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
                      , blaze-html
@@ -35,6 +36,7 @@ executable QuerySFZD
                      , servant-blaze
                      , servant-client
                      , servant-server
+                     , tagsoup
                      , utf8-string
                      , warp
   hs-source-dirs:      src

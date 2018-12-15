@@ -4,6 +4,7 @@
 module QuerySFZD.API.Theirs.Common (
     SingleChar(..)
   , Author(..)
+  , Character(..)
   ) where
 
 import Servant
@@ -15,3 +16,9 @@ instance ToHttpApiData SingleChar where
 
 newtype Author = Author String
   deriving newtype ToHttpApiData
+
+data Character = Character {
+      imgUrl    :: String
+    , author    :: String
+    , optSource :: Maybe String
+    }
