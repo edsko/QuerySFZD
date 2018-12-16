@@ -21,7 +21,7 @@ type API = Get '[HTML] IndexPage
 
 type Search = QueryParam' '[Required] "characters" SearchChars
            :> QueryParam' '[Required] "style"      Style
-           :> Get '[HTML] Results
+           :> Get '[HTML] ResultsPage
 
 api :: Proxy API
 api = Proxy

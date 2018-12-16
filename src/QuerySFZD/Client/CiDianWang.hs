@@ -73,8 +73,7 @@ search mgr cache style = runExceptT . goChars
          case mCached of
            Just cs ->
              return Results {
-                   searchChars = SearchChars [c]
-                 , resultChars = Map.singleton c cs
+                   resultChars = Map.singleton c cs
                  , rawResult   = RawResult []
                  }
            Nothing -> do
@@ -97,37 +96,33 @@ search mgr cache style = runExceptT . goChars
         return $ here <> rest
 
     rawSearch' :: SearchChar -> ClientM (Results, Maybe DynPath)
-    rawSearch' c = do
-        CdwResults{..} <- rawSearch
+    rawSearch' c = fromCdwResults Nothing c <$>
+        rawSearch
           (CDW Calligraphy)
           (CDW c)
           (CDW (Author ""))
           (CDW style)
           (Just (CDW RefererSelf))
-        return (
-            Results {
-                searchChars = SearchChars [c]
-              , resultChars = Map.singleton c cdwCharacters
-              , rawResult   = RawResult [(header, cdwRaw)]
-              }
-          , cdwNextPage
-          )
-      where
-        header = "search '" ++ [searchChar c] ++ "'"
 
     nextPage' :: DynPath -> SearchChar -> ClientM (Results, Maybe DynPath)
-    nextPage' p c = do
-        CdwResults{..} <- nextPage p
-        return (
-            Results {
-                searchChars = SearchChars [] -- don't repeat characters
-              , resultChars = Map.singleton c cdwCharacters
-              , rawResult   = RawResult [(header, cdwRaw)]
-              }
-          , cdwNextPage
-          )
+    nextPage' p c = fromCdwResults (Just p) c <$> nextPage p
+
+    fromCdwResults :: Maybe DynPath
+                   -> SearchChar
+                   -> CdwResults
+                   -> (Results, Maybe DynPath)
+    fromCdwResults mp c CdwResults{..} = (
+          Results {
+              resultChars = Map.singleton c cdwCharacters
+            , rawResult   = RawResult [(header, cdwRaw)]
+            }
+        , cdwNextPage
+        )
       where
-        header = dynPathToString p
+        header :: String
+        header = case mp of
+                   Nothing -> "search '" ++ [searchChar c] ++ "'"
+                   Just p  -> dynPathToString p
 
     clientEnvSearch, clientEnvNext :: ClientEnv
     clientEnvSearch = mkClientEnv mgr baseUrlSearch

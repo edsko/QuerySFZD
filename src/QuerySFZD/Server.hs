@@ -20,11 +20,11 @@ server mgr cache =
     :<|> query mgr cache
     :<|> serveDirectoryWebApp "static"
 
-query :: Manager -> Cache -> SearchChars -> Style -> Handler Results
+query :: Manager -> Cache -> SearchChars -> Style -> Handler ResultsPage
 query mgr cache qry s = do
     mRes <- liftIO $ search CiDianWang mgr cache s qry
     case mRes of
-      Right r -> return r
+      Right r -> return $ ResultsPage qry r
       Left  e -> throwError $ err501 { errBody = fromString (renderErr e) }
   where
     renderErr :: ServantError -> String

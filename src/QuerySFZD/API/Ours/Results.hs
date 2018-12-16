@@ -12,6 +12,7 @@ module QuerySFZD.API.Ours.Results (
   , Character(..)
   , Author(..)
   , RawResult(..)
+  , ResultsPage(..)
   ) where
 
 import Codec.Serialise
@@ -35,15 +36,13 @@ import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
 
 data Results = Results {
-      searchChars :: SearchChars
-    , resultChars :: Map SearchChar [Character]
+      resultChars :: Map SearchChar [Character]
     , rawResult   :: RawResult
     }
 
 instance Semigroup Results where
   a <> b = Results {
-               searchChars = combineUsing (<>)                 searchChars
-             , resultChars = combineUsing (Map.unionWith (<>)) resultChars
+               resultChars = combineUsing (Map.unionWith (<>)) resultChars
              , rawResult   = combineUsing (<>)                 rawResult
              }
     where
@@ -52,15 +51,13 @@ instance Semigroup Results where
 
 instance Monoid Results where
   mempty = Results {
-               searchChars = mempty
-             , resultChars = mempty
+               resultChars = mempty
              , rawResult  =  mempty
              }
 
 nubResults :: Results -> Results
 nubResults Results{..} = Results {
-      searchChars = searchChars
-    , resultChars = nub <$> resultChars
+      resultChars = nub <$> resultChars
     , rawResult   = rawResult
     }
 
@@ -81,10 +78,15 @@ newtype Author = Author { authorToString :: String }
 newtype RawResult = RawResult [(String, [Tag String])]
   deriving newtype (Semigroup, Monoid)
 
-instance ToMarkup Results where
-  toMarkup Results{..} = template $ do
+data ResultsPage = ResultsPage {
+      rpSearchChars :: SearchChars
+    , rpResults     :: Results
+    }
+
+instance ToMarkup ResultsPage where
+  toMarkup ResultsPage{..} = template $ do
       H.h1 $ fromString $ "Search results for '"
-                       ++ searchCharsToString searchChars
+                       ++ searchCharsToString rpSearchChars
                        ++ "'"
 
       forM_ (Set.toList authors) $ \(Author a) -> do
@@ -92,10 +94,10 @@ instance ToMarkup Results where
 
         H.table ! A.class_ "characters" $ do
           H.tr $
-            forM_ (searchCharsToList searchChars) $ \sc ->
+            forM_ (searchCharsToList rpSearchChars) $ \sc ->
               H.th $ fromString [searchChar sc]
           H.tr $
-            forM_ (searchCharsToList searchChars) $ \sc -> do
+            forM_ (searchCharsToList rpSearchChars) $ \sc -> do
               let matching :: [Character]
                   matching = filter ((== Author a) . author) $
                                resultChars Map.! sc
@@ -108,6 +110,8 @@ instance ToMarkup Results where
 
       renderRawResult rawResult
     where
+      Results{..} = rpResults
+
       flat :: [Character]
       flat = concat (Map.elems resultChars)
 
