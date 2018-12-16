@@ -11,16 +11,17 @@ import Servant
 import Servant.Client
 
 import QuerySFZD.API.Ours
+import QuerySFZD.Cache
 import QuerySFZD.Client
 
-server :: Manager -> Server API
-server mgr =
+server :: Manager -> Cache -> Server API
+server mgr cache =
          return IndexPage
-    :<|> query mgr
+    :<|> query mgr cache
 
-query :: Manager -> SearchChars -> Style -> Handler Results
-query mgr qry s = do
-    mRes <- liftIO $ search CiDianWang mgr qry s
+query :: Manager -> Cache -> SearchChars -> Style -> Handler Results
+query mgr cache qry s = do
+    mRes <- liftIO $ search CiDianWang mgr cache qry s
     case mRes of
       Left err ->
         throwError $ err501 { errBody = fromString (renderErr err) }

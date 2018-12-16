@@ -23,6 +23,7 @@ executable QuerySFZD
                        QuerySFZD.API.Ours.Template
                        QuerySFZD.API.Theirs.CiDianWang
                        QuerySFZD.API.Theirs.CiDianWang.Results
+                       QuerySFZD.Cache
                        QuerySFZD.Client
                        QuerySFZD.Client.CiDianWang
                        QuerySFZD.Server
@@ -32,6 +33,7 @@ executable QuerySFZD
                      , blaze-html
                      , blaze-markup
                      , bytestring
+                     , directory
                      , http-client
                      , servant
                      , servant-blaze

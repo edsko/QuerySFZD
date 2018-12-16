@@ -12,6 +12,7 @@ import Text.HTML.TagSoup (Tag)
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang
+import QuerySFZD.Cache
 import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
@@ -50,10 +51,11 @@ resultsPage :: DynPath -> ClientM CdwResults
 -------------------------------------------------------------------------------}
 
 search :: Manager
+       -> Cache
        -> SearchChars
        -> Style
        -> IO (Either ServantError ([Character], RawResult))
-search mgr (SearchChars [c]) s = do
+search mgr cache (SearchChars [c]) s = do
     searchResult <- runClientM goSearch clientEnvSearch
     case searchResult of
       Left err ->
