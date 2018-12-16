@@ -14,6 +14,7 @@ module QuerySFZD.API.Ours.Results (
   ) where
 
 import Codec.Serialise
+import Control.Monad
 import Data.Foldable (forM_)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
@@ -78,7 +79,7 @@ instance ToMarkup Results where
       forM_ (Set.toList authors) $ \(Author a) -> do
         H.h2 $ fromString a
 
-        H.table $ do
+        H.table ! A.class_ "characters" $ do
           H.tr $
             forM_ (searchCharsToList searchChars) $ \sc ->
               H.th $ fromString [searchChar sc]
@@ -88,18 +89,11 @@ instance ToMarkup Results where
                   matching = filter ((== Author a) . author) $
                                resultChars Map.! sc
               H.td $ do
+                when (null matching) $ do
+                  H.img ! A.src "/static/notfound.png"
                 forM_ matching $ \c -> do
-                   H.img ! A.src (fromString (imgUrl c))
-                         ! A.height "168"
-                   H.br
-
-{-
-      forM_ flat $ \c -> do
-        H.img ! A.src (fromString (imgUrl c))
-        fromString $ authorToString (author c)
-        forM_ (optSource c) $ \src -> do
-          H.i $ fromString $ "(" ++ src ++ ")"
--}
+                  H.img ! A.src (fromString (imgUrl c))
+                  H.br
 
       renderRawResult rawResult
     where

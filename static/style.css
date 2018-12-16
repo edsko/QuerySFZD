@@ -1,0 +1,12 @@
+body {
+  font-family: sans-serif;
+}
+
+table.characters td {
+  vertical-align: top;
+}
+
+table.characters img {
+  height: 168px;
+  border: 1px solid #B8D9F4;
+}

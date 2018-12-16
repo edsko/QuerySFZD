@@ -18,6 +18,7 @@ server :: Manager -> Cache -> Server API
 server mgr cache =
          return IndexPage
     :<|> query mgr cache
+    :<|> serveDirectoryWebApp "static"
 
 query :: Manager -> Cache -> SearchChars -> Style -> Handler Results
 query mgr cache qry s = do
