@@ -9,6 +9,7 @@ module QuerySFZD.API.Theirs.CiDianWang.Results (
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
 import           Data.List (find, isPrefixOf)
 import           Data.Maybe (listToMaybe)
+import           Data.String
 import           Servant.API.ContentTypes
 import           Servant.HTML.Blaze
 import           Text.HTML.TagSoup
@@ -18,7 +19,7 @@ import QuerySFZD.Util
 
 data CdwResults = CdwResults {
       characters :: [Character]
-    , nextPage   :: Maybe String
+    , nextPage   :: Maybe DynPath
     , raw        :: [Tag String]
     }
 
@@ -64,7 +65,7 @@ parseCharacter
     optSource = Nothing
 parseCharacter _otherwise = Nothing
 
-parseNextPage :: [Tag String] -> Maybe (String, [Tag String])
+parseNextPage :: [Tag String] -> Maybe (DynPath, [Tag String])
 parseNextPage
     ( TagOpen "a" attrsA
     : TagText "下一页"
@@ -72,7 +73,7 @@ parseNextPage
     : leftover
     )
   | Just (_, nextPage) <- find (isAttr "href") attrsA
-  = Just (nextPage, leftover)
+  = Just (fromString nextPage, leftover)
 parseNextPage _otherwose = Nothing
 
 {-------------------------------------------------------------------------------

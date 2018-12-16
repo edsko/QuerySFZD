@@ -23,6 +23,7 @@ import           Servant.HTML.Blaze
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
+import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
   Raw API
@@ -31,12 +32,18 @@ import QuerySFZD.API.Theirs.CiDianWang.Results as Export
 -- | CDW search API
 --
 -- > http://search.cidianwang.com/?m=8&q=好&z=输入书法家&y=3
-type API = QueryParam' '[Required] "m" (CDW Query)
-        :> QueryParam' '[Required] "q" (CDW SearchChar)
-        :> QueryParam' '[Required] "z" (CDW Author)
-        :> QueryParam' '[Required] "y" (CDW Style)
-        :> Header' '[] "Referer" (CDW Referer)
-        :> Get '[HTML] CdwResults
+type API = Search :<|> ResultsPage
+
+-- | Search for a character
+type Search = QueryParam' '[Required] "m" (CDW Query)
+           :> QueryParam' '[Required] "q" (CDW SearchChar)
+           :> QueryParam' '[Required] "z" (CDW Author)
+           :> QueryParam' '[Required] "y" (CDW Style)
+           :> Header' '[] "Referer" (CDW Referer)
+           :> Get '[HTML] CdwResults
+
+-- | Get specific results page
+type ResultsPage = DynPath :> Get '[HTML] CdwResults
 
 api :: Proxy API
 api = Proxy

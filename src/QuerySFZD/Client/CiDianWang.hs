@@ -5,22 +5,33 @@ module QuerySFZD.Client.CiDianWang (
   ) where
 
 import Network.HTTP.Client (Manager)
+import Servant
 import Servant.Client hiding (baseUrl)
+import Text.HTML.TagSoup (Tag)
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang
+import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
   Raw client
 -------------------------------------------------------------------------------}
 
-baseUrl :: BaseUrl
-baseUrl = BaseUrl {
+baseUrlSearch :: BaseUrl
+baseUrlSearch = BaseUrl {
       baseUrlScheme = Http
     , baseUrlHost   = "search.cidianwang.com"
     , baseUrlPort   = 80
     , baseUrlPath   = ""
+    }
+
+baseUrlResultsPage :: BaseUrl
+baseUrlResultsPage = BaseUrl {
+      baseUrlScheme = Http
+    , baseUrlHost   = "www.cidianwang.com"
+    , baseUrlPort   = 80
+    , baseUrlPath   = "shufa"
     }
 
 rawSearch :: CDW Query
@@ -29,7 +40,10 @@ rawSearch :: CDW Query
           -> CDW Style
           -> Maybe (CDW Referer)
           -> ClientM CdwResults
-rawSearch = client api
+
+resultsPage :: DynPath -> ClientM CdwResults
+
+(rawSearch :<|> resultsPage) = client api
 
 {-------------------------------------------------------------------------------
   Public API
@@ -39,18 +53,36 @@ search :: Manager
        -> SearchChars
        -> Style
        -> IO (Either ServantError ([Character], RawResult))
-search mgr (SearchChars [c]) s =
-    runClientM go clientEnv
+search mgr (SearchChars [c]) s = do
+    searchResult <- runClientM goSearch clientEnvSearch
+    case searchResult of
+      Left err ->
+        return (Left err)
+      Right CdwResults{..} -> do
+        let accChars = characters
+            accRaw   = [("search", raw)]
+        runClientM (goNext accChars accRaw nextPage) clientEnvResultsPage
   where
-    go :: ClientM ([Character], RawResult)
-    go = do
-        CdwResults{..} <- rawSearch
-                            (CDW Calligraphy)
-                            (CDW c)
-                            (CDW (Author ""))
-                            (CDW s)
-                            (Just (CDW RefererSelf))
-        return (characters, RawResult raw)
+    goSearch :: ClientM CdwResults
+    goSearch = rawSearch
+                 (CDW Calligraphy)
+                 (CDW c)
+                 (CDW (Author ""))
+                 (CDW s)
+                 (Just (CDW RefererSelf))
 
-    clientEnv :: ClientEnv
-    clientEnv = mkClientEnv mgr baseUrl
+    goNext :: [Character]
+           -> [(String, [Tag String])]
+           -> Maybe DynPath
+           -> ClientM ([Character], RawResult)
+    goNext accChars accRaw Nothing =
+        return (accChars, RawResult accRaw)
+    goNext accChars accRaw (Just p) = do
+        CdwResults{..} <- resultsPage p
+        let accChars' = characters ++ accChars
+            accRaw'   = (dynPathToString p, raw) : accRaw
+        goNext accChars' accRaw' nextPage
+
+    clientEnvSearch, clientEnvResultsPage :: ClientEnv
+    clientEnvSearch      = mkClientEnv mgr baseUrlSearch
+    clientEnvResultsPage = mkClientEnv mgr baseUrlResultsPage
