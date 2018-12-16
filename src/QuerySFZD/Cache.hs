@@ -1,8 +1,10 @@
 module QuerySFZD.Cache (
     Cache -- opaque
   , withCache
-  , addToCache
-  , cacheLookup
+  , cacheChar
+  , getCachedChar
+  , cachePreference
+  , getCachedPreferences
   ) where
 
 import Codec.Serialise
@@ -13,6 +15,13 @@ import System.FilePath
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
+import QuerySFZD.Preferences (Preferences)
+
+import qualified QuerySFZD.Preferences as Preferences
+
+{-------------------------------------------------------------------------------
+  Cache initialization
+-------------------------------------------------------------------------------}
 
 -- | Opaque handle to the cache
 --
@@ -35,19 +44,40 @@ openCache = do
 closeCache :: Cache -> IO ()
 closeCache _ = return ()
 
-addToCache :: Cache -> Style -> SearchChar -> [Character] -> IO ()
-addToCache cache style c cs = writeFileSerialise path cs
+{-------------------------------------------------------------------------------
+  Access
+-------------------------------------------------------------------------------}
+
+cacheChar :: Cache -> Style -> SearchChar -> [Character] -> IO ()
+cacheChar cache style c cs = writeFileSerialise path cs
   where
     path = mkPath cache style c
 
-cacheLookup :: Cache -> Style -> SearchChar -> IO (Maybe [Character])
-cacheLookup cache style c = do
+getCachedChar :: Cache -> Style -> SearchChar -> IO (Maybe [Character])
+getCachedChar cache style c = do
     exists <- doesFileExist path
     if exists
       then Just <$> readFileDeserialise path
       else return Nothing
   where
     path = mkPath cache style c
+
+cachePreference :: Cache -> String -> IO ()
+cachePreference cache url = do
+    -- TODO: Potential race condition here
+    ps <- getCachedPreferences cache
+    writeFileSerialise path $ Preferences.prefer url ps
+  where
+    path = preferencesPath cache
+
+getCachedPreferences :: Cache -> IO Preferences
+getCachedPreferences cache = do
+    exists <- doesFileExist path
+    if exists
+      then readFileDeserialise path
+      else return Preferences.empty
+  where
+    path = preferencesPath cache
 
 {-------------------------------------------------------------------------------
   Internal
@@ -56,3 +86,6 @@ cacheLookup cache style c = do
 mkPath :: Cache -> Style -> SearchChar -> FilePath
 mkPath (Cache cache) style (SearchChar c) =
     cache </> show style </> [c]
+
+preferencesPath :: Cache -> FilePath
+preferencesPath (Cache cache) = cache </> "preferences"

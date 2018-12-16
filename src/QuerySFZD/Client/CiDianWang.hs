@@ -75,7 +75,7 @@ search mgr cache Query{..} =
           , resultsRaw   = RawResult []
           }
     goChar c = do
-        mCached <- liftIO $ cacheLookup cache queryStyle c
+        mCached <- liftIO $ getCachedChar cache queryStyle c
         case mCached of
           Just cs ->
             return Results {
@@ -84,7 +84,7 @@ search mgr cache Query{..} =
                 }
           Nothing -> do
             results <- goChar' c
-            liftIO $ addToCache cache queryStyle c (resultsChars results Map.! c)
+            liftIO $ cacheChar cache queryStyle c (resultsChars results Map.! c)
             return results
 
     goChar' :: SearchChar -> ExceptT ServantError IO Results
