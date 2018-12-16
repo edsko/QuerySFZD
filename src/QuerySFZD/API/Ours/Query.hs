@@ -11,16 +11,22 @@ module QuerySFZD.API.Ours.Query (
   , styleHttpApiData
   ) where
 
-import           Data.Coerce (coerce)
+import Data.Coerce (coerce)
+
 import qualified Data.Text as Text
 
 import Servant
 
 -- | Characters we're seaching for
 newtype SearchChar = SearchChar { searchChar :: Char }
+  deriving newtype (Eq, Ord)
 
 -- | We allow to search for multiple characters at once
+--
+-- The order of the list here matters: we want to display the characters
+-- in the order the user requested them.
 newtype SearchChars = SearchChars [SearchChar]
+  deriving newtype (Semigroup, Monoid)
 
 searchCharsToString :: SearchChars -> String
 searchCharsToString = coerce

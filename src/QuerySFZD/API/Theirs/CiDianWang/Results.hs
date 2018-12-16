@@ -6,13 +6,14 @@ module QuerySFZD.API.Theirs.CiDianWang.Results (
     CdwResults(..)
   ) where
 
+import Data.List (find, isPrefixOf)
+import Data.Maybe (listToMaybe)
+import Data.String
+import Servant.API.ContentTypes
+import Servant.HTML.Blaze
+import Text.HTML.TagSoup
+
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
-import           Data.List (find, isPrefixOf)
-import           Data.Maybe (listToMaybe)
-import           Data.String
-import           Servant.API.ContentTypes
-import           Servant.HTML.Blaze
-import           Text.HTML.TagSoup
 
 import QuerySFZD.API.Ours.Results
 import QuerySFZD.Util
@@ -38,31 +39,39 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author
+    : TagText author'
     : TagClose "a"
     : TagOpen "br" []
     : TagOpen "span" _attrsSpan
     : TagText ('出' : '自' : '：' : source)
     : leftover
     )
-  | Just _           <- find isBoxShow attrsImg
-  , Just (_, imgUrl) <- find (isAttr "src") attrsImg
-  = Just (Character {..}, leftover)
-  where
-    optSource = Just source
+  | Just _        <- find isBoxShow attrsImg
+  , Just (_, url) <- find (isAttr "src") attrsImg
+  = Just ( Character {
+               author    = Author author'
+             , optSource = Just source
+             , imgUrl    = url
+             }
+         , leftover
+         )
 parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author
+    : TagText author'
     : TagClose "a"
     : leftover
     )
-  | Just _           <- find isBoxShow attrsImg
-  , Just (_, imgUrl) <- find (isAttr "src") attrsImg
-  = Just (Character {..}, leftover)
-  where
-    optSource = Nothing
+  | Just _        <- find isBoxShow attrsImg
+  , Just (_, url) <- find (isAttr "src") attrsImg
+  = Just ( Character {
+               author    = Author author'
+             , optSource = Nothing
+             , imgUrl    = url
+             }
+         , leftover
+         )
 parseCharacter _otherwise = Nothing
 
 parseNextPage :: [Tag String] -> Maybe (DynPath, [Tag String])

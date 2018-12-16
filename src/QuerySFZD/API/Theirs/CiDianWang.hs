@@ -16,12 +16,14 @@ module QuerySFZD.API.Theirs.CiDianWang (
   , module Export
   ) where
 
-import           Data.Proxy
+import Data.Proxy
+import Servant
+import Servant.HTML.Blaze
+
 import qualified Data.Text as Text
-import           Servant
-import           Servant.HTML.Blaze
 
 import QuerySFZD.API.Ours.Query
+import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
 import QuerySFZD.Util
 
@@ -56,9 +58,6 @@ api = Proxy
 --
 -- CDW supports more than just calligraphy (but we don't, for now).
 data Query = Calligraphy
-
--- | Author
-newtype Author = Author String
 
 -- | Who sent the request?
 data Referer =

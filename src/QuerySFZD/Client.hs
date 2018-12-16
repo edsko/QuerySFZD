@@ -7,9 +7,10 @@ module QuerySFZD.Client (
 import Network.HTTP.Client (Manager)
 import Servant.Client
 
-import           QuerySFZD.API.Ours.Query
-import           QuerySFZD.API.Ours.Results
-import           QuerySFZD.Cache
+import QuerySFZD.API.Ours.Query
+import QuerySFZD.API.Ours.Results
+import QuerySFZD.Cache
+
 import qualified QuerySFZD.Client.CiDianWang as CDW
 
 -- | Which backend to use?
@@ -21,5 +22,5 @@ search :: Backend
        -> Cache
        -> Style
        -> SearchChars
-       -> IO (Either ServantError ([Character], RawResult))
+       -> IO (Either ServantError Results)
 search CiDianWang = CDW.search

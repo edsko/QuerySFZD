@@ -1,12 +1,14 @@
 module Main where
 
-import           Network.HTTP.Client
+import Network.HTTP.Client
+import Servant
+
 import qualified Network.Wai.Handler.Warp as Wai
-import           Servant
+
+import QuerySFZD.Cache
+import QuerySFZD.Server
 
 import qualified QuerySFZD.API.Ours as Ours
-import           QuerySFZD.Cache
-import           QuerySFZD.Server
 
 app :: Manager -> Cache -> Application
 app mgr cache = serve Ours.api $ server mgr cache

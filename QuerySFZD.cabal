@@ -33,6 +33,7 @@ executable QuerySFZD
                      , blaze-html
                      , blaze-markup
                      , bytestring
+                     , containers
                      , directory
                      , filepath
                      , http-client

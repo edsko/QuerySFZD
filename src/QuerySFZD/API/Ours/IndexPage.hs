@@ -4,9 +4,10 @@ module QuerySFZD.API.Ours.IndexPage (
     IndexPage(..)
   ) where
 
-import           Data.Foldable (forM_)
-import           Data.String
-import           Text.Blaze
+import Data.Foldable (forM_)
+import Data.String
+import Text.Blaze
+
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 

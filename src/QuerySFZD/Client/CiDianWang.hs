@@ -1,13 +1,18 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE TupleSections      #-}
 
 module QuerySFZD.Client.CiDianWang (
     search
   ) where
 
+import Control.Concurrent
 import Control.Monad.Except
 import Network.HTTP.Client (Manager)
 import Servant
 import Servant.Client hiding (baseUrl)
+
+import qualified Data.Map.Strict as Map
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
@@ -56,46 +61,73 @@ search :: Manager
        -> Cache
        -> Style
        -> SearchChars
-       -> IO (Either ServantError ([Character], RawResult))
+       -> IO (Either ServantError Results)
 search mgr cache style = runExceptT . goChars
   where
-    goChars :: SearchChars -> ExceptT ServantError IO ([Character], RawResult)
+    goChars :: SearchChars -> ExceptT ServantError IO Results
     goChars (SearchChars cs) = mconcat <$> mapM goChar cs
 
-    goChar :: SearchChar -> ExceptT ServantError IO ([Character], RawResult)
+    goChar :: SearchChar -> ExceptT ServantError IO Results
     goChar c = do
          mCached <- liftIO $ cacheLookup cache c
          case mCached of
            Just cs ->
-             return (cs, mempty)
+             return Results {
+                   searchChars = SearchChars [c]
+                 , resultChars = Map.singleton c cs
+                 , rawResult   = RawResult []
+                 }
            Nothing -> do
-             (cs, raw) <- goChar' c
-             liftIO $ addToCache cache c cs
-             return (cs, raw)
+             results <- goChar' c
+             liftIO $ addToCache cache c (resultChars results Map.! c)
+             return results
 
-    goChar' :: SearchChar -> ExceptT ServantError IO ([Character], RawResult)
+    goChar' :: SearchChar -> ExceptT ServantError IO Results
     goChar' c = do
-        CdwResults{..} <- ExceptT $ runClientM (goSearch c) clientEnvSearch
-        otherPages     <- ExceptT $ runClientM (goNext cdwNextPage) clientEnvNext
-        let raw = RawResult [("search '" ++ [searchChar c] ++ "'", cdwRaw)]
-        return $ (cdwCharacters, raw) <> otherPages
+        (first, next) <- ExceptT $ runClientM (rawSearch'  c) clientEnvSearch
+        rest          <- ExceptT $ runClientM (goNext next c) clientEnvNext
+        return $ first <> rest
 
-    goSearch :: SearchChar -> ClientM CdwResults
-    goSearch c =
-        rawSearch
+    goNext :: Maybe DynPath -> SearchChar -> ClientM Results
+    goNext Nothing  _ = return mempty
+    goNext (Just p) c = do
+        liftIO $ threadDelay 2_000_000 -- don't flood the server
+        (here, next) <- nextPage' p c
+        rest         <- goNext next c
+        return $ here <> rest
+
+    rawSearch' :: SearchChar -> ClientM (Results, Maybe DynPath)
+    rawSearch' c = do
+        CdwResults{..} <- rawSearch
           (CDW Calligraphy)
           (CDW c)
           (CDW (Author ""))
           (CDW style)
           (Just (CDW RefererSelf))
+        return (
+            Results {
+                searchChars = SearchChars [c]
+              , resultChars = Map.singleton c cdwCharacters
+              , rawResult   = RawResult [(header, cdwRaw)]
+              }
+          , cdwNextPage
+          )
+      where
+        header = "search '" ++ [searchChar c] ++ "'"
 
-    goNext :: Maybe DynPath -> ClientM ([Character], RawResult)
-    goNext Nothing  = return mempty
-    goNext (Just p) = do
+    nextPage' :: DynPath -> SearchChar -> ClientM (Results, Maybe DynPath)
+    nextPage' p c = do
         CdwResults{..} <- nextPage p
-        otherPages     <- goNext cdwNextPage
-        let raw = RawResult [(dynPathToString p, cdwRaw)]
-        return $ (cdwCharacters, raw) <> otherPages
+        return (
+            Results {
+                searchChars = SearchChars [] -- don't repeat characters
+              , resultChars = Map.singleton c cdwCharacters
+              , rawResult   = RawResult [(header, cdwRaw)]
+              }
+          , cdwNextPage
+          )
+      where
+        header = dynPathToString p
 
     clientEnvSearch, clientEnvNext :: ClientEnv
     clientEnvSearch = mkClientEnv mgr baseUrlSearch
