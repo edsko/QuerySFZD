@@ -18,9 +18,9 @@ import QuerySFZD.API.Ours.Results
 import QuerySFZD.Util
 
 data CdwResults = CdwResults {
-      characters :: [Character]
-    , nextPage   :: Maybe DynPath
-    , raw        :: [Tag String]
+      cdwCharacters :: [Character]
+    , cdwNextPage   :: Maybe DynPath
+    , cdwRaw        :: [Tag String]
     }
 
 instance MimeUnrender HTML CdwResults where
@@ -28,9 +28,9 @@ instance MimeUnrender HTML CdwResults where
 
 parseSoup :: [Tag String] -> CdwResults
 parseSoup soup = CdwResults {
-      characters = parseSoupWith parseCharacter soup
-    , nextPage = listToMaybe $ parseSoupWith parseNextPage soup
-    , raw = soup
+      cdwCharacters = parseSoupWith parseCharacter soup
+    , cdwNextPage   = listToMaybe $ parseSoupWith parseNextPage soup
+    , cdwRaw        = soup
     }
 
 parseCharacter :: [Tag String] -> Maybe (Character, [Tag String])

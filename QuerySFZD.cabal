@@ -34,7 +34,10 @@ executable QuerySFZD
                      , blaze-markup
                      , bytestring
                      , directory
+                     , filepath
                      , http-client
+                     , mtl
+                     , serialise
                      , servant
                      , servant-blaze
                      , servant-client

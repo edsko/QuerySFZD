@@ -4,10 +4,10 @@ module QuerySFZD.Client.CiDianWang (
     search
   ) where
 
+import Control.Monad.Except
 import Network.HTTP.Client (Manager)
 import Servant
 import Servant.Client hiding (baseUrl)
-import Text.HTML.TagSoup (Tag)
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
@@ -19,6 +19,7 @@ import QuerySFZD.Util
   Raw client
 -------------------------------------------------------------------------------}
 
+-- | Used for the initial search query
 baseUrlSearch :: BaseUrl
 baseUrlSearch = BaseUrl {
       baseUrlScheme = Http
@@ -27,8 +28,9 @@ baseUrlSearch = BaseUrl {
     , baseUrlPath   = ""
     }
 
-baseUrlResultsPage :: BaseUrl
-baseUrlResultsPage = BaseUrl {
+-- | Used for all subsequent results pages
+baseUrlNext :: BaseUrl
+baseUrlNext = BaseUrl {
       baseUrlScheme = Http
     , baseUrlHost   = "www.cidianwang.com"
     , baseUrlPort   = 80
@@ -42,9 +44,9 @@ rawSearch :: CDW Query
           -> Maybe (CDW Referer)
           -> ClientM CdwResults
 
-resultsPage :: DynPath -> ClientM CdwResults
+nextPage :: DynPath -> ClientM CdwResults
 
-(rawSearch :<|> resultsPage) = client api
+(rawSearch :<|> nextPage) = client api
 
 {-------------------------------------------------------------------------------
   Public API
@@ -52,39 +54,49 @@ resultsPage :: DynPath -> ClientM CdwResults
 
 search :: Manager
        -> Cache
-       -> SearchChars
        -> Style
+       -> SearchChars
        -> IO (Either ServantError ([Character], RawResult))
-search mgr cache (SearchChars [c]) s = do
-    searchResult <- runClientM goSearch clientEnvSearch
-    case searchResult of
-      Left err ->
-        return (Left err)
-      Right CdwResults{..} -> do
-        let accChars = characters
-            accRaw   = [("search", raw)]
-        runClientM (goNext accChars accRaw nextPage) clientEnvResultsPage
+search mgr cache style = runExceptT . goChars
   where
-    goSearch :: ClientM CdwResults
-    goSearch = rawSearch
-                 (CDW Calligraphy)
-                 (CDW c)
-                 (CDW (Author ""))
-                 (CDW s)
-                 (Just (CDW RefererSelf))
+    goChars :: SearchChars -> ExceptT ServantError IO ([Character], RawResult)
+    goChars (SearchChars cs) = mconcat <$> mapM goChar cs
 
-    goNext :: [Character]
-           -> [(String, [Tag String])]
-           -> Maybe DynPath
-           -> ClientM ([Character], RawResult)
-    goNext accChars accRaw Nothing =
-        return (accChars, RawResult accRaw)
-    goNext accChars accRaw (Just p) = do
-        CdwResults{..} <- resultsPage p
-        let accChars' = characters ++ accChars
-            accRaw'   = (dynPathToString p, raw) : accRaw
-        goNext accChars' accRaw' nextPage
+    goChar :: SearchChar -> ExceptT ServantError IO ([Character], RawResult)
+    goChar c = do
+         mCached <- liftIO $ cacheLookup cache c
+         case mCached of
+           Just cs ->
+             return (cs, mempty)
+           Nothing -> do
+             (cs, raw) <- goChar' c
+             liftIO $ addToCache cache c cs
+             return (cs, raw)
 
-    clientEnvSearch, clientEnvResultsPage :: ClientEnv
-    clientEnvSearch      = mkClientEnv mgr baseUrlSearch
-    clientEnvResultsPage = mkClientEnv mgr baseUrlResultsPage
+    goChar' :: SearchChar -> ExceptT ServantError IO ([Character], RawResult)
+    goChar' c = do
+        CdwResults{..} <- ExceptT $ runClientM (goSearch c) clientEnvSearch
+        otherPages     <- ExceptT $ runClientM (goNext cdwNextPage) clientEnvNext
+        let raw = RawResult [("search '" ++ [searchChar c] ++ "'", cdwRaw)]
+        return $ (cdwCharacters, raw) <> otherPages
+
+    goSearch :: SearchChar -> ClientM CdwResults
+    goSearch c =
+        rawSearch
+          (CDW Calligraphy)
+          (CDW c)
+          (CDW (Author ""))
+          (CDW style)
+          (Just (CDW RefererSelf))
+
+    goNext :: Maybe DynPath -> ClientM ([Character], RawResult)
+    goNext Nothing  = return mempty
+    goNext (Just p) = do
+        CdwResults{..} <- nextPage p
+        otherPages     <- goNext cdwNextPage
+        let raw = RawResult [(dynPathToString p, cdwRaw)]
+        return $ (cdwCharacters, raw) <> otherPages
+
+    clientEnvSearch, clientEnvNext :: ClientEnv
+    clientEnvSearch = mkClientEnv mgr baseUrlSearch
+    clientEnvNext   = mkClientEnv mgr baseUrlNext

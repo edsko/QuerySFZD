@@ -32,7 +32,7 @@ import QuerySFZD.Util
 -- | CDW search API
 --
 -- > http://search.cidianwang.com/?m=8&q=好&z=输入书法家&y=3
-type API = Search :<|> ResultsPage
+type API = Search :<|> NextPage
 
 -- | Search for a character
 type Search = QueryParam' '[Required] "m" (CDW Query)
@@ -43,7 +43,7 @@ type Search = QueryParam' '[Required] "m" (CDW Query)
            :> Get '[HTML] CdwResults
 
 -- | Get specific results page
-type ResultsPage = DynPath :> Get '[HTML] CdwResults
+type NextPage = DynPath :> Get '[HTML] CdwResults
 
 api :: Proxy API
 api = Proxy

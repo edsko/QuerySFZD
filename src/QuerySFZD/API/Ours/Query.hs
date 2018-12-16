@@ -5,7 +5,7 @@
 module QuerySFZD.API.Ours.Query (
     SearchChar(..)
   , SearchChars(..)
-  , searchCharsString
+  , searchCharsToString
   , Style(..)
   , styleDescription
   , styleHttpApiData
@@ -17,13 +17,13 @@ import qualified Data.Text as Text
 import Servant
 
 -- | Characters we're seaching for
-newtype SearchChar = SearchChar Char
+newtype SearchChar = SearchChar { searchChar :: Char }
 
 -- | We allow to search for multiple characters at once
 newtype SearchChars = SearchChars [SearchChar]
 
-searchCharsString :: SearchChars -> String
-searchCharsString = coerce
+searchCharsToString :: SearchChars -> String
+searchCharsToString = coerce
 
 instance FromHttpApiData SearchChars where
   parseQueryParam = Right . SearchChars . map SearchChar . Text.unpack

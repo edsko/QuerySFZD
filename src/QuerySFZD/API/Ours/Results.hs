@@ -1,5 +1,9 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 module QuerySFZD.API.Ours.Results (
     Results(..)
@@ -7,8 +11,10 @@ module QuerySFZD.API.Ours.Results (
   , RawResult(..)
   ) where
 
+import           Codec.Serialise
 import           Data.Foldable (forM_)
 import           Data.String (fromString)
+import           GHC.Generics (Generic)
 import           Text.Blaze hiding (Tag)
 import           Text.Blaze.Html5 (Html)
 import qualified Text.Blaze.Html5 as H
@@ -30,13 +36,16 @@ data Character = Character {
     , author    :: String
     , optSource :: Maybe String
     }
+  deriving stock    Generic
+  deriving anyclass Serialise
 
 -- | The raw tagsoup (for debugging/development)
 newtype RawResult = RawResult [(String, [Tag String])]
+  deriving newtype (Semigroup, Monoid)
 
 instance ToMarkup Results where
   toMarkup Results{..} = template $ do
-    H.h1 $ fromString (searchCharsString searchChars)
+    H.h1 $ fromString (searchCharsToString searchChars)
     forM_ resultChars $ \c -> do
       H.img ! A.src (fromString (imgUrl c))
       fromString $ author c
