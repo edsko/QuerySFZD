@@ -7,6 +7,7 @@ module QuerySFZD.Cache (
 
 import Codec.Serialise
 import Control.Exception
+import Data.Foldable (forM_)
 import System.Directory
 import System.FilePath
 
@@ -27,18 +28,31 @@ withCache = bracket openCache closeCache
 openCache :: IO Cache
 openCache = do
     createDirectoryIfMissing False "cache"
+    forM_ ([minBound .. maxBound] :: [Style]) $ \st ->
+      createDirectoryIfMissing False ("cache" </> show st)
     return $ Cache "cache"
 
 closeCache :: Cache -> IO ()
 closeCache _ = return ()
 
-addToCache :: Cache -> SearchChar -> [Character] -> IO ()
-addToCache (Cache cache) (SearchChar c) cs =
-    writeFileSerialise (cache </> [c]) cs
+addToCache :: Cache -> Style -> SearchChar -> [Character] -> IO ()
+addToCache cache style c cs = writeFileSerialise path cs
+  where
+    path = mkPath cache style c
 
-cacheLookup :: Cache -> SearchChar -> IO (Maybe [Character])
-cacheLookup (Cache cache) (SearchChar c) = do
-    exists <- doesFileExist (cache </> [c])
+cacheLookup :: Cache -> Style -> SearchChar -> IO (Maybe [Character])
+cacheLookup cache style c = do
+    exists <- doesFileExist path
     if exists
-      then Just <$> readFileDeserialise (cache </> [c])
+      then Just <$> readFileDeserialise path
       else return Nothing
+  where
+    path = mkPath cache style c
+
+{-------------------------------------------------------------------------------
+  Internal
+-------------------------------------------------------------------------------}
+
+mkPath :: Cache -> Style -> SearchChar -> FilePath
+mkPath (Cache cache) style (SearchChar c) =
+    cache </> show style </> [c]
