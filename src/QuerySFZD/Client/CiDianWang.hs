@@ -1,12 +1,19 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module QuerySFZD.Client.CiDianWang (
-    baseUrl
-  , query
+    search
   ) where
 
+import Network.HTTP.Client (Manager)
 import Servant.Client hiding (baseUrl)
 
+import QuerySFZD.API.Ours.Query
+import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang
-import QuerySFZD.API.Theirs.Common
+
+{-------------------------------------------------------------------------------
+  Raw client
+-------------------------------------------------------------------------------}
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl {
@@ -16,10 +23,34 @@ baseUrl = BaseUrl {
     , baseUrlPath   = ""
     }
 
-query :: Query
-      -> SingleChar
-      -> Author
-      -> Style
-      -> Maybe Referer
-      -> ClientM Results
-query = client api
+rawSearch :: CDW Query
+          -> CDW SearchChar
+          -> CDW Author
+          -> CDW Style
+          -> Maybe (CDW Referer)
+          -> ClientM CdwResults
+rawSearch = client api
+
+{-------------------------------------------------------------------------------
+  Public API
+-------------------------------------------------------------------------------}
+
+search :: Manager
+       -> SearchChars
+       -> Style
+       -> IO (Either ServantError ([Character], RawResult))
+search mgr (SearchChars [c]) s =
+    runClientM go clientEnv
+  where
+    go :: ClientM ([Character], RawResult)
+    go = do
+        CdwResults{..} <- rawSearch
+                            (CDW Calligraphy)
+                            (CDW c)
+                            (CDW (Author ""))
+                            (CDW s)
+                            (Just (CDW RefererSelf))
+        return (characters, RawResult raw)
+
+    clientEnv :: ClientEnv
+    clientEnv = mkClientEnv mgr baseUrl

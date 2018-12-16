@@ -18,11 +18,12 @@ executable QuerySFZD
   main-is:             Main.hs
   other-modules:       QuerySFZD.API.Ours
                        QuerySFZD.API.Ours.IndexPage
+                       QuerySFZD.API.Ours.Query
                        QuerySFZD.API.Ours.Results
                        QuerySFZD.API.Ours.Template
                        QuerySFZD.API.Theirs.CiDianWang
                        QuerySFZD.API.Theirs.CiDianWang.Results
-                       QuerySFZD.API.Theirs.Common
+                       QuerySFZD.Client
                        QuerySFZD.Client.CiDianWang
                        QuerySFZD.Server
                        QuerySFZD.Util
@@ -37,6 +38,7 @@ executable QuerySFZD
                      , servant-client
                      , servant-server
                      , tagsoup
+                     , text
                      , utf8-string
                      , warp
   hs-source-dirs:      src

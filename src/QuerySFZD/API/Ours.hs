@@ -1,11 +1,8 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 
 module QuerySFZD.API.Ours (
     API
-  , Characters(..)
   , api
   , module Export
   ) where
@@ -15,16 +12,15 @@ import Servant
 import Servant.HTML.Blaze
 
 import QuerySFZD.API.Ours.IndexPage as Export
+import QuerySFZD.API.Ours.Query as Export
 import QuerySFZD.API.Ours.Results as Export
 
--- | Characters we're seaching for
-newtype Characters = Characters String
-  deriving newtype FromHttpApiData
-
 type API = Get '[HTML] IndexPage
-      :<|> "results"
-        :> QueryParam' '[Required] "characters" Characters
-        :> Get '[HTML] Results
+      :<|> "search" :> Search
+
+type Search = QueryParam' '[Required] "characters" SearchChars
+           :> QueryParam' '[Required] "style"      Style
+           :> Get '[HTML] Results
 
 api :: Proxy API
 api = Proxy

@@ -3,8 +3,7 @@
 {-# LANGUAGE RecordWildCards       #-}
 
 module QuerySFZD.API.Theirs.CiDianWang.Results (
-    Results(..)
-  , Character(..)
+    CdwResults(..)
   ) where
 
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
@@ -14,20 +13,20 @@ import           Servant.API.ContentTypes
 import           Servant.HTML.Blaze
 import           Text.HTML.TagSoup
 
-import QuerySFZD.API.Theirs.Common
+import QuerySFZD.API.Ours.Results
 import QuerySFZD.Util
 
-data Results = Results {
+data CdwResults = CdwResults {
       characters :: [Character]
     , nextPage   :: Maybe String
     , raw        :: [Tag String]
     }
 
-instance MimeUnrender HTML Results where
+instance MimeUnrender HTML CdwResults where
   mimeUnrender _ = Right . parseSoup . parseTags . UTF8.toString
 
-parseSoup :: [Tag String] -> Results
-parseSoup soup = Results {
+parseSoup :: [Tag String] -> CdwResults
+parseSoup soup = CdwResults {
       characters = parseSoupWith parseCharacter soup
     , nextPage = listToMaybe $ parseSoupWith parseNextPage soup
     , raw = soup

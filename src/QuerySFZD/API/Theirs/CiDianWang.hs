@@ -1,61 +1,88 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeOperators              #-}
 
 module QuerySFZD.API.Theirs.CiDianWang (
     API
-  , Query(..)
-  , Style(..)
-  , Referer(..)
   , api
+  , CDW(..)
+    -- * CDW specific types
+  , Query(..)
+  , Referer(..)
+  , Author(..)
   , module Export
   ) where
 
-import Data.Proxy
-import Servant
-import Servant.HTML.Blaze
+import           Data.Proxy
+import qualified Data.Text as Text
+import           Servant
+import           Servant.HTML.Blaze
 
+import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
-import QuerySFZD.API.Theirs.Common
 
+{-------------------------------------------------------------------------------
+  Raw API
+-------------------------------------------------------------------------------}
 
+-- | CDW search API
+--
 -- > http://search.cidianwang.com/?m=8&q=好&z=输入书法家&y=3
-type API = QueryParam' '[Required] "m" Query
-        :> QueryParam' '[Required] "q" SingleChar
-        :> QueryParam' '[Required] "z" Author
-        :> QueryParam' '[Required] "y" Style
-        :> Header' '[] "Referer" Referer
-        :> Get '[HTML] Results
-
-data Query = Calligraphy
-
-instance ToHttpApiData Query where
-  toQueryParam Calligraphy = "8"
-
-data Referer =
-    -- | cidiangwang.com responds with a 404 if this is not set
-    RefererSelf
-
-instance ToHttpApiData Referer where
-  toQueryParam RefererSelf = "http://www.cidianwang.com/shufa/"
+type API = QueryParam' '[Required] "m" (CDW Query)
+        :> QueryParam' '[Required] "q" (CDW SearchChar)
+        :> QueryParam' '[Required] "z" (CDW Author)
+        :> QueryParam' '[Required] "y" (CDW Style)
+        :> Header' '[] "Referer" (CDW Referer)
+        :> Get '[HTML] CdwResults
 
 api :: Proxy API
 api = Proxy
 
-data Style =
-    AllStyles   -- ^ 不限
-  | SemiCursive -- ^ 行书
-  | Regular     -- ^ 楷书
-  | Cursive     -- ^ 草书
-  | Clerical    -- ^ 隶书
-  | Seal        -- ^ 篆书
-  | Small       -- ^ 小楷
+{-------------------------------------------------------------------------------
+  CDW specific types
+-------------------------------------------------------------------------------}
 
-instance ToHttpApiData Style where
-  toQueryParam AllStyles   = "5"
-  toQueryParam SemiCursive = "0"
-  toQueryParam Regular     = "1"
-  toQueryParam Cursive     = "2"
-  toQueryParam Clerical    = "3"
-  toQueryParam Seal        = "4"
-  toQueryParam Small       = "6"
+-- | What are we querying?
+--
+-- CDW supports more than just calligraphy (but we don't, for now).
+data Query = Calligraphy
+
+-- | Author
+newtype Author = Author String
+
+-- | Who sent the request?
+data Referer =
+    -- | cidiangwang.com responds with a 404 if this is not set
+    RefererSelf
+
+{-------------------------------------------------------------------------------
+  CDW specific unparsers
+-------------------------------------------------------------------------------}
+
+-- | Different backends require different 'ToHttpApiData' instances
+--
+-- For consistency we use this wrapper even for CDW specific types.
+newtype CDW a = CDW a
+
+instance ToHttpApiData (CDW SearchChar) where
+  toQueryParam (CDW (SearchChar c)) = Text.pack [c]
+
+instance ToHttpApiData (CDW Author) where
+  toQueryParam (CDW (Author a)) = Text.pack a
+
+instance ToHttpApiData (CDW Style) where
+  toQueryParam (CDW SemiCursive) = "0"
+  toQueryParam (CDW Regular)     = "1"
+  toQueryParam (CDW Cursive)     = "2"
+  toQueryParam (CDW Clerical)    = "3"
+  toQueryParam (CDW Seal)        = "4"
+  toQueryParam (CDW Small)       = "6"
+
+instance ToHttpApiData (CDW Query) where
+  toQueryParam (CDW Calligraphy) = "8"
+
+instance ToHttpApiData (CDW Referer) where
+  toQueryParam (CDW RefererSelf) = "http://www.cidianwang.com/shufa/"
