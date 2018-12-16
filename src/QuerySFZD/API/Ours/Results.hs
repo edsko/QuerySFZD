@@ -82,9 +82,9 @@ data ResultsPage = ResultsPage {
 
 instance ToMarkup ResultsPage where
   toMarkup ResultsPage{..} = template $ do
-      H.h1 $ fromString $ "Search results for '"
-                       ++ searchCharsToString queryChars
-                       ++ "'"
+      H.p $ fromString $ "Search results for '"
+                      ++ searchCharsToString queryChars
+                      ++ "'"
 
       case queryAuthor of
         Nothing -> do

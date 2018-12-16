@@ -18,8 +18,7 @@ data IndexPage = IndexPage
 
 instance ToMarkup IndexPage where
   toMarkup IndexPage = template $ do
-      -- TODO: This manual encoding of the "results" URL is horrible
-      H.h1 "Search 书法字典"
+      -- TODO: This manual path (@search@) should be avoided.
       H.form ! A.action "search" $ do
         H.table $ do
           H.tr $ do

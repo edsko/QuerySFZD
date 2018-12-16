@@ -16,4 +16,6 @@ template body =
       H.head $
         H.link ! A.rel "stylesheet"
                ! A.href "static/style.css"
-      H.body body
+      H.body $ do
+        H.h1 $ H.a ! A.href "/" $ "Search 书法字典"
+        body
