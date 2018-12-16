@@ -2,6 +2,14 @@ body {
   font-family: sans-serif;
 }
 
+h1 {
+  background: #B8D9F4;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
 table.characters td {
   vertical-align: top;
 }

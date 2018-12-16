@@ -83,10 +83,12 @@ newtype RawResult = RawResult [(String, [Tag String])]
 
 instance ToMarkup Results where
   toMarkup Results{..} = template $ do
-      H.h1 $ fromString (searchCharsToString searchChars)
+      H.h1 $ fromString $ "Search results for '"
+                       ++ searchCharsToString searchChars
+                       ++ "'"
 
       forM_ (Set.toList authors) $ \(Author a) -> do
-        H.h2 $ fromString a
+        H.h2 $ fromString $ "Calligrapher: " ++ a
 
         H.table ! A.class_ "characters" $ do
           H.tr $
