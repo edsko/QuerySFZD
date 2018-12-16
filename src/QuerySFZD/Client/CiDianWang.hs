@@ -8,6 +8,7 @@ module QuerySFZD.Client.CiDianWang (
 
 import Control.Concurrent
 import Control.Monad.Except
+import Data.Char (isLetter)
 import Network.HTTP.Client (Manager)
 import Servant
 import Servant.Client hiding (baseUrl)
@@ -68,18 +69,23 @@ search mgr cache Query{..} =
     goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
 
     goChar :: SearchChar -> ExceptT ServantError IO Results
+    goChar c | not (isLetter (searchChar c)) =
+        return Results {
+            resultsChars = Map.singleton c []
+          , resultsRaw   = RawResult []
+          }
     goChar c = do
-         mCached <- liftIO $ cacheLookup cache queryStyle c
-         case mCached of
-           Just cs ->
-             return Results {
-                   resultsChars = Map.singleton c cs
-                 , resultsRaw   = RawResult []
-                 }
-           Nothing -> do
-             results <- goChar' c
-             liftIO $ addToCache cache queryStyle c (resultsChars results Map.! c)
-             return results
+        mCached <- liftIO $ cacheLookup cache queryStyle c
+        case mCached of
+          Just cs ->
+            return Results {
+                  resultsChars = Map.singleton c cs
+                , resultsRaw   = RawResult []
+                }
+          Nothing -> do
+            results <- goChar' c
+            liftIO $ addToCache cache queryStyle c (resultsChars results Map.! c)
+            return results
 
     goChar' :: SearchChar -> ExceptT ServantError IO Results
     goChar' c = do

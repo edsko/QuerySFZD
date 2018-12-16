@@ -17,6 +17,7 @@ module QuerySFZD.API.Ours.Results (
 
 import Codec.Serialise
 import Control.Monad
+import Data.Char (isLetter)
 import Data.Foldable (forM_)
 import Data.List (intercalate, nub)
 import Data.Map.Strict (Map)
@@ -106,7 +107,7 @@ instance ToMarkup ResultsPage where
                       matching = filter matchesAuthor $ resultsChars Map.! sc
 
                   H.td $ do
-                    when (null matching) $ do
+                    when (null matching && isLetter (searchChar sc)) $ do
                       H.img ! A.src "/static/notfound.png"
                     forM_ matching $ \c -> do
                       H.img ! A.src (fromString (charImg c))
@@ -139,7 +140,7 @@ instance ToMarkup ResultsPage where
                                    (resultsChars Map.! sc)
 
                   H.td $ do
-                    when (null matching) $ do
+                    when (null matching && isLetter (searchChar sc)) $ do
                       H.img ! A.src "/static/notfound.png"
                     forM_ matching $ \c -> do
                       H.img ! A.src (fromString (charImg c))
