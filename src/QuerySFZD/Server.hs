@@ -27,7 +27,7 @@ query :: Manager
       -> Author
       -> Fallbacks
       -> Handler ResultsPage
-query mgr cache sc style author fallbacks = do
+query mgr cache sc style author fs = do
     mRes <- liftIO $ search CiDianWang mgr cache qry
     case mRes of
       Right r -> return $ ResultsPage qry r
@@ -40,7 +40,7 @@ query mgr cache sc style author fallbacks = do
         , queryAuthor    = if null (authorToString author)
                              then Nothing
                              else Just author
-        , queryFallbacks = fallbacks
+        , queryFallbacks = fs
         }
 
     renderErr :: ServantError -> String

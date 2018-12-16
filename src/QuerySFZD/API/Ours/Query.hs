@@ -86,7 +86,7 @@ newtype Author = Author { authorToString :: String }
   deriving newtype (Show, Eq, Ord, Serialise, FromHttpApiData)
 
 -- | Fallbacks
-newtype Fallbacks = Fallbacks [Author]
+newtype Fallbacks = Fallbacks { fallbacks :: [Author] }
   deriving newtype (Show)
 
 instance FromHttpApiData Fallbacks where

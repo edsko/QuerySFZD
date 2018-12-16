@@ -18,7 +18,7 @@ module QuerySFZD.API.Ours.Results (
 import Codec.Serialise
 import Control.Monad
 import Data.Foldable (forM_)
-import Data.List (nub)
+import Data.List (intercalate, nub)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
 import Data.String (fromString)
@@ -34,6 +34,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
+import QuerySFZD.Util
 
 data Results = Results {
       resultsChars :: Map SearchChar [Character]
@@ -85,24 +86,68 @@ instance ToMarkup ResultsPage where
                        ++ searchCharsToString queryChars
                        ++ "'"
 
-      forM_ (Set.toList authors) $ \(Author a) -> do
-        H.h2 $ fromString $ "Calligrapher: " ++ a
+      case queryAuthor of
+        Nothing -> do
+          H.p "Showing results for all calligraphers."
 
-        H.table ! A.class_ "characters" $ do
-          H.tr $
-            forM_ (searchCharsToList queryChars) $ \sc ->
-              H.th $ fromString [searchChar sc]
-          H.tr $
-            forM_ (searchCharsToList queryChars) $ \sc -> do
-              let matching :: [Character]
-                  matching = filter ((== Author a) . charAuthor) $
-                               resultsChars Map.! sc
-              H.td $ do
-                when (null matching) $ do
-                  H.img ! A.src "/static/notfound.png"
-                forM_ matching $ \c -> do
-                  H.img ! A.src (fromString (charImg c))
-                  H.br
+          forM_ (Set.toList authors) $ \(Author a) -> do
+            H.h2 $ fromString $ "Calligrapher: " ++ a
+
+            H.table ! A.class_ "characters" $ do
+              H.tr $
+                forM_ (searchCharsToList queryChars) $ \sc ->
+                  H.th $ fromString [searchChar sc]
+              H.tr $
+                forM_ (searchCharsToList queryChars) $ \sc -> do
+                  let matchesAuthor :: Character -> Bool
+                      matchesAuthor c = charAuthor c == Author a
+
+                      matching :: [Character]
+                      matching = filter matchesAuthor $ resultsChars Map.! sc
+
+                  H.td $ do
+                    when (null matching) $ do
+                      H.img ! A.src "/static/notfound.png"
+                    forM_ matching $ \c -> do
+                      H.img ! A.src (fromString (charImg c))
+                      H.br
+                      case charSource c of
+                        Nothing  -> "(Unknown source)"
+                        Just src -> fromString $ "(" ++ src ++ ")"
+                      H.br
+
+        Just (Author a) -> do
+          H.p $ do
+            fromString $ "Showing results for calligrapher " ++ a ++ "."
+            H.br
+            if null (fallbacks queryFallbacks)
+              then "No fallbacks."
+              else fromString $ "Fallbacks: " ++ renderFallbacks queryFallbacks ++ "."
+
+            H.table ! A.class_ "characters" $ do
+              H.tr $
+                forM_ (searchCharsToList queryChars) $ \sc ->
+                  H.th $ fromString [searchChar sc]
+              H.tr $
+                forM_ (searchCharsToList queryChars) $ \sc -> do
+                  let matching :: [Character]
+                      matching = indexInOrder
+                                   ( (\c -> charAuthor c == Author a)
+                                   : map (\fb c -> charAuthor c == fb)
+                                         (fallbacks queryFallbacks)
+                                   )
+                                   (resultsChars Map.! sc)
+
+                  H.td $ do
+                    when (null matching) $ do
+                      H.img ! A.src "/static/notfound.png"
+                    forM_ matching $ \c -> do
+                      H.img ! A.src (fromString (charImg c))
+                      H.br
+                      fromString $ authorToString (charAuthor c)
+                      forM_ (charSource c) $ \src ->
+                        fromString $ " (" ++ src ++ ")"
+                      H.br
 
       renderRawResult resultsRaw
     where
@@ -114,6 +159,9 @@ instance ToMarkup ResultsPage where
 
       authors :: Set Author
       authors = Set.fromList $ map charAuthor flat
+
+      renderFallbacks :: Fallbacks -> String
+      renderFallbacks = intercalate ", " . map authorToString . fallbacks
 
 {-------------------------------------------------------------------------------
   Debugging

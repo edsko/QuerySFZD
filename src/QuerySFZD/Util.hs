@@ -13,6 +13,7 @@ module QuerySFZD.Util (
   , parseSoupWith
   , explode
   , trim
+  , indexInOrder
     -- * Servant
   , DynPath(..)
   , dynPathToString
@@ -68,6 +69,10 @@ trim = ltrim . rtrim
     ltrim, rtrim :: String -> String
     ltrim = dropWhile isSpace
     rtrim = reverse . dropWhile isSpace . reverse
+
+indexInOrder :: [a -> Bool] -> [a] -> [a]
+indexInOrder []     _  = []
+indexInOrder (p:ps) xs = filter p xs ++ indexInOrder ps xs
 
 {-------------------------------------------------------------------------------
   Servant
