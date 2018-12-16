@@ -65,7 +65,7 @@ search :: Manager
 search mgr cache style = runExceptT . goChars
   where
     goChars :: SearchChars -> ExceptT ServantError IO Results
-    goChars (SearchChars cs) = mconcat <$> mapM goChar cs
+    goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
 
     goChar :: SearchChar -> ExceptT ServantError IO Results
     goChar c = do

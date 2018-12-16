@@ -8,6 +8,7 @@
 
 module QuerySFZD.API.Ours.Results (
     Results(..)
+  , nubResults
   , Character(..)
   , Author(..)
   , RawResult(..)
@@ -16,6 +17,7 @@ module QuerySFZD.API.Ours.Results (
 import Codec.Serialise
 import Control.Monad
 import Data.Foldable (forM_)
+import Data.List (nub)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
 import Data.String (fromString)
@@ -55,13 +57,20 @@ instance Monoid Results where
              , rawResult  =  mempty
              }
 
+nubResults :: Results -> Results
+nubResults Results{..} = Results {
+      searchChars = searchChars
+    , resultChars = nub <$> resultChars
+    , rawResult   = rawResult
+    }
+
 -- | Returned characters
 data Character = Character {
       imgUrl    :: String
     , author    :: Author
     , optSource :: Maybe String
     }
-  deriving stock    Generic
+  deriving stock    (Generic, Eq)
   deriving anyclass Serialise
 
 -- | Author
