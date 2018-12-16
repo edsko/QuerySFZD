@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 
 module QuerySFZD.API.Ours.Results (
@@ -15,6 +16,7 @@ module QuerySFZD.API.Ours.Results (
 import Codec.Serialise
 import Data.Foldable (forM_)
 import Data.Map.Strict (Map)
+import Data.Set (Set)
 import Data.String (fromString)
 import GHC.Generics (Generic)
 import Text.Blaze hiding (Tag)
@@ -22,6 +24,7 @@ import Text.Blaze.Html5 (Html)
 import Text.HTML.TagSoup (Tag)
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -72,16 +75,39 @@ instance ToMarkup Results where
   toMarkup Results{..} = template $ do
       H.h1 $ fromString (searchCharsToString searchChars)
 
+      forM_ (Set.toList authors) $ \(Author a) -> do
+        H.h2 $ fromString a
+
+        H.table $ do
+          H.tr $
+            forM_ (searchCharsToList searchChars) $ \sc ->
+              H.th $ fromString [searchChar sc]
+          H.tr $
+            forM_ (searchCharsToList searchChars) $ \sc -> do
+              let matching :: [Character]
+                  matching = filter ((== Author a) . author) $
+                               resultChars Map.! sc
+              H.td $ do
+                forM_ matching $ \c -> do
+                   H.img ! A.src (fromString (imgUrl c))
+                         ! A.height "168"
+                   H.br
+
+{-
       forM_ flat $ \c -> do
         H.img ! A.src (fromString (imgUrl c))
         fromString $ authorToString (author c)
         forM_ (optSource c) $ \src -> do
           H.i $ fromString $ "(" ++ src ++ ")"
+-}
 
       renderRawResult rawResult
     where
       flat :: [Character]
       flat = concat (Map.elems resultChars)
+
+      authors :: Set Author
+      authors = Set.fromList $ map author flat
 
 {-------------------------------------------------------------------------------
   Debugging

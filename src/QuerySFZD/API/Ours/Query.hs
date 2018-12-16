@@ -25,7 +25,7 @@ newtype SearchChar = SearchChar { searchChar :: Char }
 --
 -- The order of the list here matters: we want to display the characters
 -- in the order the user requested them.
-newtype SearchChars = SearchChars [SearchChar]
+newtype SearchChars = SearchChars { searchCharsToList :: [SearchChar] }
   deriving newtype (Semigroup, Monoid)
 
 searchCharsToString :: SearchChars -> String
