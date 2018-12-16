@@ -13,9 +13,10 @@ import qualified Text.Blaze.Html5.Attributes as A
 template :: Html -> Html
 template body =
     H.docTypeHtml $ do
-      H.head $
+      H.head $ do
         H.link ! A.rel "stylesheet"
                ! A.href "static/style.css"
+        H.script ! A.src "static/handlers.js" $ return ()
       H.body $ do
         H.h1 $ H.a ! A.href "/" $ "Search 书法字典"
         body

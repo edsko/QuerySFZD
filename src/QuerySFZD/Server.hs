@@ -18,6 +18,7 @@ server :: Manager -> Cache -> Server API
 server mgr cache =
          return IndexPage
     :<|> query mgr cache
+    :<|> prefer cache
     :<|> serveDirectoryWebApp "static"
 
 query :: Manager
@@ -29,8 +30,9 @@ query :: Manager
       -> Handler ResultsPage
 query mgr cache sc style author fs = do
     mRes <- liftIO $ search CiDianWang mgr cache qry
+    ps   <- liftIO $ getCachedPreferences cache
     case mRes of
-      Right r -> return $ ResultsPage qry r
+      Right r -> return $ ResultsPage qry r ps
       Left  e -> throwError $ err501 { errBody = fromString (renderErr e) }
   where
     qry :: Query
@@ -45,3 +47,8 @@ query mgr cache sc style author fs = do
 
     renderErr :: ServantError -> String
     renderErr err = "backend error: " ++ show err
+
+prefer :: Cache -> String -> Handler NoContent
+prefer cache url = do
+    liftIO $ cachePreference cache url
+    return NoContent

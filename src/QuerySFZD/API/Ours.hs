@@ -17,6 +17,7 @@ import QuerySFZD.API.Ours.Results as Export
 
 type API = Get '[HTML] IndexPage
       :<|> "search" :> Search
+      :<|> "prefer" :> ReqBody '[PlainText] String :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
 type Search = QueryParam' '[Required] "characters" SearchChars

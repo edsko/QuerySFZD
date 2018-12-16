@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Preferences
 --
@@ -9,10 +10,13 @@ module QuerySFZD.Preferences (
     Preferences -- opaque
   , empty
   , prefer
+  , sort
   ) where
 
 import Codec.Serialise
+import Data.List (sortBy)
 import Data.Map.Strict (Map)
+import Data.Ord (comparing)
 import GHC.Generics (Generic)
 
 import qualified Data.Map.Strict as Map
@@ -34,3 +38,17 @@ prefer url (Preferences ps) =
     $ Map.insert url 0 -- this url gets highest priority
     $ fmap (+1)        -- all other urls shift up by one
     $ ps
+
+
+-- | Preference
+--
+-- 'NoPreference' intentionally listed second so that the derived 'Ord'
+-- instance sorts elements with a specified preference first.
+data Preference = Preference Int | NoPreference
+  deriving (Eq, Ord)
+
+sort :: forall a. Preferences -> (a -> String) -> [a] -> [a]
+sort (Preferences ps) f = sortBy (comparing g)
+  where
+    g :: a -> Preference
+    g a = maybe NoPreference Preference $ Map.lookup (f a) ps

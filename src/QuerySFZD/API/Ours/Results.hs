@@ -35,7 +35,10 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
+import QuerySFZD.Preferences
 import QuerySFZD.Util
+
+import qualified QuerySFZD.Preferences as Preferences
 
 data Results = Results {
       resultsChars :: Map SearchChar [Character]
@@ -77,8 +80,9 @@ newtype RawResult = RawResult [(String, [Tag String])]
   deriving newtype (Semigroup, Monoid)
 
 data ResultsPage = ResultsPage {
-      rpQuery   :: Query
-    , rpResults :: Results
+      rpQuery       :: Query
+    , rpResults     :: Results
+    , rpPreferences :: Preferences
     }
 
 instance ToMarkup ResultsPage where
@@ -132,18 +136,20 @@ instance ToMarkup ResultsPage where
               H.tr $
                 forM_ (searchCharsToList queryChars) $ \sc -> do
                   let matching :: [Character]
-                      matching = indexInOrder
+                      matching = Preferences.sort rpPreferences charImg
+                               . indexInOrder
                                    ( (\c -> charAuthor c == Author a)
                                    : map (\fb c -> charAuthor c == fb)
                                          (fallbacks queryFallbacks)
                                    )
-                                   (resultsChars Map.! sc)
+                               $ resultsChars Map.! sc
 
                   H.td $ do
                     when (null matching && isLetter (searchChar sc)) $ do
                       H.img ! A.src "/static/notfound.png"
                     forM_ matching $ \c -> do
                       H.img ! A.src (fromString (charImg c))
+                            ! A.onclick (fromString ("prefer(\"" ++ charImg c ++ "\");"))
                       H.br
                       fromString $ authorToString (charAuthor c)
                       forM_ (charSource c) $ \src ->
