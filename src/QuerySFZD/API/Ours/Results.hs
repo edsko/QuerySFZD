@@ -36,14 +36,14 @@ import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
 
 data Results = Results {
-      resultChars :: Map SearchChar [Character]
-    , rawResult   :: RawResult
+      resultsChars :: Map SearchChar [Character]
+    , resultsRaw   :: RawResult
     }
 
 instance Semigroup Results where
   a <> b = Results {
-               resultChars = combineUsing (Map.unionWith (<>)) resultChars
-             , rawResult   = combineUsing (<>)                 rawResult
+               resultsChars = combineUsing (Map.unionWith (<>)) resultsChars
+             , resultsRaw   = combineUsing (<>)                 resultsRaw
              }
     where
       combineUsing :: (a -> a -> a) -> (Results -> a) -> a
@@ -51,42 +51,38 @@ instance Semigroup Results where
 
 instance Monoid Results where
   mempty = Results {
-               resultChars = mempty
-             , rawResult  =  mempty
+               resultsChars = mempty
+             , resultsRaw   = mempty
              }
 
 nubResults :: Results -> Results
 nubResults Results{..} = Results {
-      resultChars = nub <$> resultChars
-    , rawResult   = rawResult
+      resultsChars = nub <$> resultsChars
+    , resultsRaw   = resultsRaw
     }
 
 -- | Returned characters
 data Character = Character {
-      imgUrl    :: String
-    , author    :: Author
-    , optSource :: Maybe String
+      charImg    :: String
+    , charAuthor :: Author
+    , charSource :: Maybe String
     }
   deriving stock    (Generic, Eq)
   deriving anyclass Serialise
-
--- | Author
-newtype Author = Author { authorToString :: String }
-  deriving newtype (Eq, Ord, Serialise)
 
 -- | The raw tagsoup (for debugging/development)
 newtype RawResult = RawResult [(String, [Tag String])]
   deriving newtype (Semigroup, Monoid)
 
 data ResultsPage = ResultsPage {
-      rpSearchChars :: SearchChars
-    , rpResults     :: Results
+      rpQuery   :: Query
+    , rpResults :: Results
     }
 
 instance ToMarkup ResultsPage where
   toMarkup ResultsPage{..} = template $ do
       H.h1 $ fromString $ "Search results for '"
-                       ++ searchCharsToString rpSearchChars
+                       ++ searchCharsToString queryChars
                        ++ "'"
 
       forM_ (Set.toList authors) $ \(Author a) -> do
@@ -94,29 +90,30 @@ instance ToMarkup ResultsPage where
 
         H.table ! A.class_ "characters" $ do
           H.tr $
-            forM_ (searchCharsToList rpSearchChars) $ \sc ->
+            forM_ (searchCharsToList queryChars) $ \sc ->
               H.th $ fromString [searchChar sc]
           H.tr $
-            forM_ (searchCharsToList rpSearchChars) $ \sc -> do
+            forM_ (searchCharsToList queryChars) $ \sc -> do
               let matching :: [Character]
-                  matching = filter ((== Author a) . author) $
-                               resultChars Map.! sc
+                  matching = filter ((== Author a) . charAuthor) $
+                               resultsChars Map.! sc
               H.td $ do
                 when (null matching) $ do
                   H.img ! A.src "/static/notfound.png"
                 forM_ matching $ \c -> do
-                  H.img ! A.src (fromString (imgUrl c))
+                  H.img ! A.src (fromString (charImg c))
                   H.br
 
-      renderRawResult rawResult
+      renderRawResult resultsRaw
     where
+      Query{..}   = rpQuery
       Results{..} = rpResults
 
       flat :: [Character]
-      flat = concat (Map.elems resultChars)
+      flat = concat (Map.elems resultsChars)
 
       authors :: Set Author
-      authors = Set.fromList $ map author flat
+      authors = Set.fromList $ map charAuthor flat
 
 {-------------------------------------------------------------------------------
   Debugging

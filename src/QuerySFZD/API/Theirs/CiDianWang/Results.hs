@@ -39,7 +39,7 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author'
+    : TagText author
     : TagClose "a"
     : TagOpen "br" []
     : TagOpen "span" _attrsSpan
@@ -47,11 +47,11 @@ parseCharacter
     : leftover
     )
   | Just _        <- find isBoxShow attrsImg
-  , Just (_, url) <- find (isAttr "src") attrsImg
+  , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               author    = Author author'
-             , optSource = Just source
-             , imgUrl    = url
+               charAuthor = Author author
+             , charSource = Just source
+             , charImg    = img
              }
          , leftover
          )
@@ -59,16 +59,16 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author'
+    : TagText author
     : TagClose "a"
     : leftover
     )
   | Just _        <- find isBoxShow attrsImg
-  , Just (_, url) <- find (isAttr "src") attrsImg
+  , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               author    = Author author'
-             , optSource = Nothing
-             , imgUrl    = url
+               charAuthor = Author author
+             , charSource = Nothing
+             , charImg    = img
              }
          , leftover
          )

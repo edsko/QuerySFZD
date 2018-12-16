@@ -10,9 +10,8 @@ module QuerySFZD.API.Theirs.CiDianWang (
   , api
   , CDW(..)
     -- * CDW specific types
-  , Query(..)
-  , Referer(..)
-  , Author(..)
+  , CdwQuery(..)
+  , CdwReferer(..)
   , module Export
   ) where
 
@@ -23,7 +22,6 @@ import Servant.HTML.Blaze
 import qualified Data.Text as Text
 
 import QuerySFZD.API.Ours.Query
-import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
 import QuerySFZD.Util
 
@@ -37,11 +35,11 @@ import QuerySFZD.Util
 type API = Search :<|> NextPage
 
 -- | Search for a character
-type Search = QueryParam' '[Required] "m" (CDW Query)
+type Search = QueryParam' '[Required] "m" CdwQuery
            :> QueryParam' '[Required] "q" (CDW SearchChar)
            :> QueryParam' '[Required] "z" (CDW Author)
            :> QueryParam' '[Required] "y" (CDW Style)
-           :> Header' '[] "Referer" (CDW Referer)
+           :> Header' '[] "Referer" CdwReferer
            :> Get '[HTML] CdwResults
 
 -- | Get specific results page
@@ -57,20 +55,18 @@ api = Proxy
 -- | What are we querying?
 --
 -- CDW supports more than just calligraphy (but we don't, for now).
-data Query = Calligraphy
+data CdwQuery = CdwCalligraphy
 
 -- | Who sent the request?
-data Referer =
+data CdwReferer =
     -- | cidiangwang.com responds with a 404 if this is not set
-    RefererSelf
+    CdwRefererSelf
 
 {-------------------------------------------------------------------------------
   CDW specific unparsers
 -------------------------------------------------------------------------------}
 
 -- | Different backends require different 'ToHttpApiData' instances
---
--- For consistency we use this wrapper even for CDW specific types.
 newtype CDW a = CDW a
 
 instance ToHttpApiData (CDW SearchChar) where
@@ -87,8 +83,8 @@ instance ToHttpApiData (CDW Style) where
   toQueryParam (CDW Seal)        = "4"
   toQueryParam (CDW Small)       = "6"
 
-instance ToHttpApiData (CDW Query) where
-  toQueryParam (CDW Calligraphy) = "8"
+instance ToHttpApiData CdwQuery where
+  toQueryParam CdwCalligraphy = "8"
 
-instance ToHttpApiData (CDW Referer) where
-  toQueryParam (CDW RefererSelf) = "http://www.cidianwang.com/shufa/"
+instance ToHttpApiData CdwReferer where
+  toQueryParam CdwRefererSelf = "http://www.cidianwang.com/shufa/"

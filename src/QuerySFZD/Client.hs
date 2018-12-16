@@ -20,7 +20,6 @@ data Backend =
 search :: Backend
        -> Manager
        -> Cache
-       -> Style
-       -> SearchChars
+       -> Query
        -> IO (Either ServantError Results)
 search CiDianWang = CDW.search

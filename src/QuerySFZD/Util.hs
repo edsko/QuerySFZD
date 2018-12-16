@@ -11,11 +11,14 @@ module QuerySFZD.Util (
     -- * Lists
     partitionOn
   , parseSoupWith
+  , explode
+  , trim
     -- * Servant
   , DynPath(..)
   , dynPathToString
   ) where
 
+import Data.Char (isSpace)
 import Data.Map.Strict (Map)
 import Data.String
 import Data.Text (Text)
@@ -49,6 +52,22 @@ parseSoupWith f (x:xs) =
     case f (x:xs) of
       Just (b, leftover) -> b : parseSoupWith f leftover
       Nothing            -> parseSoupWith f xs
+
+explode :: forall a. Eq a => a -> [a] -> [[a]]
+explode needle = go []
+  where
+    go :: [a] -> [a] -> [[a]]
+    go acc []       = [reverse acc]
+    go acc (x:xs)
+      | x == needle = reverse acc : go [] xs
+      | otherwise   = go (x:acc) xs
+
+trim :: String -> String
+trim = ltrim . rtrim
+  where
+    ltrim, rtrim :: String -> String
+    ltrim = dropWhile isSpace
+    rtrim = reverse . dropWhile isSpace . reverse
 
 {-------------------------------------------------------------------------------
   Servant

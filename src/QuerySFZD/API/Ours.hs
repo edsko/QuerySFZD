@@ -21,6 +21,8 @@ type API = Get '[HTML] IndexPage
 
 type Search = QueryParam' '[Required] "characters" SearchChars
            :> QueryParam' '[Required] "style"      Style
+           :> QueryParam' '[Required] "author"     Author
+           :> QueryParam' '[Required] "fallbacks"  Fallbacks
            :> Get '[HTML] ResultsPage
 
 api :: Proxy API

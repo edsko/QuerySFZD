@@ -42,11 +42,11 @@ baseUrlNext = BaseUrl {
     , baseUrlPath   = "shufa"
     }
 
-rawSearch :: CDW Query
+rawSearch :: CdwQuery
           -> CDW SearchChar
           -> CDW Author
           -> CDW Style
-          -> Maybe (CDW Referer)
+          -> Maybe CdwReferer
           -> ClientM CdwResults
 
 nextPage :: DynPath -> ClientM CdwResults
@@ -59,10 +59,10 @@ nextPage :: DynPath -> ClientM CdwResults
 
 search :: Manager
        -> Cache
-       -> Style
-       -> SearchChars
+       -> Query
        -> IO (Either ServantError Results)
-search mgr cache style = runExceptT . goChars
+search mgr cache Query{..} =
+    runExceptT $ goChars queryChars
   where
     goChars :: SearchChars -> ExceptT ServantError IO Results
     goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
@@ -73,12 +73,12 @@ search mgr cache style = runExceptT . goChars
          case mCached of
            Just cs ->
              return Results {
-                   resultChars = Map.singleton c cs
-                 , rawResult   = RawResult []
+                   resultsChars = Map.singleton c cs
+                 , resultsRaw   = RawResult []
                  }
            Nothing -> do
              results <- goChar' c
-             liftIO $ addToCache cache c (resultChars results Map.! c)
+             liftIO $ addToCache cache c (resultsChars results Map.! c)
              return results
 
     goChar' :: SearchChar -> ExceptT ServantError IO Results
@@ -98,11 +98,11 @@ search mgr cache style = runExceptT . goChars
     rawSearch' :: SearchChar -> ClientM (Results, Maybe DynPath)
     rawSearch' c = fromCdwResults Nothing c <$>
         rawSearch
-          (CDW Calligraphy)
+          CdwCalligraphy
           (CDW c)
           (CDW (Author ""))
-          (CDW style)
-          (Just (CDW RefererSelf))
+          (CDW queryStyle)
+          (Just CdwRefererSelf)
 
     nextPage' :: DynPath -> SearchChar -> ClientM (Results, Maybe DynPath)
     nextPage' p c = fromCdwResults (Just p) c <$> nextPage p
@@ -113,8 +113,8 @@ search mgr cache style = runExceptT . goChars
                    -> (Results, Maybe DynPath)
     fromCdwResults mp c CdwResults{..} = (
           Results {
-              resultChars = Map.singleton c cdwCharacters
-            , rawResult   = RawResult [(header, cdwRaw)]
+              resultsChars = Map.singleton c cdwCharacters
+            , resultsRaw   = RawResult [(header, cdwRaw)]
             }
         , cdwNextPage
         )
