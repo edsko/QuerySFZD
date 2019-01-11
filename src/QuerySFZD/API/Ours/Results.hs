@@ -21,6 +21,7 @@ import Data.Char (isLetter)
 import Data.Foldable (forM_)
 import Data.List (intercalate, nub)
 import Data.Map.Strict (Map)
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.String (fromString)
 import GHC.Generics (Generic)
@@ -80,13 +81,25 @@ newtype RawResult = RawResult [(String, [Tag String])]
   deriving newtype (Semigroup, Monoid)
 
 data ResultsPage = ResultsPage {
-      rpQuery       :: Query
-    , rpResults     :: Results
-    , rpPreferences :: Preferences
+      rpQuery        :: Query
+    , rpResults      :: Results
+    , rpPreferences  :: Preferences
+    , rpSkipNotFound :: Maybe SkipNotFound
     }
 
+shouldIncludeAuthor :: ResultsPage -> Author -> Bool
+shouldIncludeAuthor ResultsPage{..} a
+  | not skipNotFound = True
+  | otherwise        = all wrote (searchCharsToList (queryChars rpQuery))
+  where
+    skipNotFound = isJust rpSkipNotFound
+    Results{..}  = rpResults
+
+    wrote :: SearchChar -> Bool
+    wrote sc = any ((== a) . charAuthor) (resultsChars Map.! sc)
+
 instance ToMarkup ResultsPage where
-  toMarkup ResultsPage{..} = template $ do
+  toMarkup rp@ResultsPage{..} = template $ do
       H.p $ fromString $ "Search results for '"
                       ++ searchCharsToString queryChars
                       ++ "'"
@@ -95,31 +108,32 @@ instance ToMarkup ResultsPage where
         Nothing -> do
           H.p "Showing results for all calligraphers."
 
-          forM_ (Set.toList authors) $ \(Author a) -> do
-            H.h2 $ fromString $ "Calligrapher: " ++ a
+          forM_ (Set.toList authors) $ \author ->
+            when (shouldIncludeAuthor rp author) $ do
+              H.h2 $ fromString $ "Calligrapher: " ++ authorToString author
 
-            H.table ! A.class_ "characters" $ do
-              H.tr $
-                forM_ (searchCharsToList queryChars) $ \sc ->
-                  H.th $ fromString [searchChar sc]
-              H.tr $
-                forM_ (searchCharsToList queryChars) $ \sc -> do
-                  let matchesAuthor :: Character -> Bool
-                      matchesAuthor c = charAuthor c == Author a
+              H.table ! A.class_ "characters" $ do
+                H.tr $
+                  forM_ (searchCharsToList queryChars) $ \sc ->
+                    H.th $ fromString [searchChar sc]
+                H.tr $
+                  forM_ (searchCharsToList queryChars) $ \sc -> do
+                    let matchesAuthor :: Character -> Bool
+                        matchesAuthor c = charAuthor c == author
 
-                      matching :: [Character]
-                      matching = filter matchesAuthor $ resultsChars Map.! sc
+                        matching :: [Character]
+                        matching = filter matchesAuthor $ resultsChars Map.! sc
 
-                  H.td $ do
-                    when (null matching && isLetter (searchChar sc)) $ do
-                      H.img ! A.src "/static/notfound.png"
-                    forM_ matching $ \c -> do
-                      H.img ! A.src (fromString (charImg c))
-                      H.br
-                      case charSource c of
-                        Nothing  -> "(Unknown source)"
-                        Just src -> fromString $ "(" ++ src ++ ")"
-                      H.br
+                    H.td $ do
+                      when (null matching && isLetter (searchChar sc)) $ do
+                        H.img ! A.src "/static/notfound.png"
+                      forM_ matching $ \c -> do
+                        H.img ! A.src (fromString (charImg c))
+                        H.br
+                        case charSource c of
+                          Nothing  -> "(Unknown source)"
+                          Just src -> fromString $ "(" ++ src ++ ")"
+                        H.br
 
         Just (Author a) -> do
           H.p $ do

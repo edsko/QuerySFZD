@@ -27,12 +27,13 @@ query :: Manager
       -> Style
       -> Author
       -> Fallbacks
+      -> Maybe SkipNotFound
       -> Handler ResultsPage
-query mgr cache sc style author fs = do
+query mgr cache sc style author fs skip = do
     mRes <- liftIO $ search CiDianWang mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
     case mRes of
-      Right r -> return $ ResultsPage qry r ps
+      Right r -> return $ ResultsPage qry r ps skip
       Left  e -> throwError $ err501 { errBody = fromString (renderErr e) }
   where
     qry :: Query

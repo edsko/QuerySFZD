@@ -40,3 +40,9 @@ instance ToMarkup IndexPage where
           H.tr $ do
             H.td $ "Fallbacks"
             H.td $ H.input ! A.name "fallbacks"
+          H.tr $ do
+            H.td $ "Options"
+            H.td $ do
+              H.input ! A.name "skipnotfound"
+                      ! A.type_ "checkbox"
+              "Require all characters"

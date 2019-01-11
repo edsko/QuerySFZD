@@ -20,10 +20,11 @@ type API = Get '[HTML] IndexPage
       :<|> "prefer" :> ReqBody '[PlainText] String :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
-type Search = QueryParam' '[Required] "characters" SearchChars
-           :> QueryParam' '[Required] "style"      Style
-           :> QueryParam' '[Required] "author"     Author
-           :> QueryParam' '[Required] "fallbacks"  Fallbacks
+type Search = QueryParam' '[Required] "characters"   SearchChars
+           :> QueryParam' '[Required] "style"        Style
+           :> QueryParam' '[Required] "author"       Author
+           :> QueryParam' '[Required] "fallbacks"    Fallbacks
+           :> QueryParam' '[Optional] "skipnotfound" SkipNotFound
            :> Get '[HTML] ResultsPage
 
 api :: Proxy API

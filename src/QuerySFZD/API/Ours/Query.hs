@@ -11,6 +11,7 @@ module QuerySFZD.API.Ours.Query (
   , styleHttpApiData
   , Author(..)
   , Fallbacks(..)
+  , SkipNotFound(..)
   , Query(..)
   ) where
 
@@ -88,6 +89,12 @@ newtype Author = Author { authorToString :: String }
 -- | Fallbacks
 newtype Fallbacks = Fallbacks { fallbacks :: [Author] }
   deriving newtype (Show)
+
+-- | Skip entries for authors with not-found characters
+data SkipNotFound = SkipNotFound
+
+instance FromHttpApiData SkipNotFound where
+  parseQueryParam = const (Right SkipNotFound)
 
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right
