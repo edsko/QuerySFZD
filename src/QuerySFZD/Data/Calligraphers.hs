@@ -42,11 +42,14 @@ knownCalligraphers = [
 
 calligrapher :: String -> Calligrapher
 calligrapher simplified =
-    head $ filter ((== simplified) . cSimplified) knownCalligraphers
+    case filter ((== simplified) . cSimplified) knownCalligraphers of
+      []         -> error $ "calligrapher: unknown calligrapher " ++ simplified
+      [c]        -> c
+      _otherwise -> error "calligrapher: more than one match"
 
 zhengkai :: [Calligrapher]
 zhengkai = [
-      calligrapher "歐陽詢"
+      calligrapher "欧阳询"
     , calligrapher "田英章" -- modern interpretation of 欧楷
     , calligrapher "田蕴章"
     , calligrapher "颜真卿"
