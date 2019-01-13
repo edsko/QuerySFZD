@@ -40,7 +40,7 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText calligrapher
+    : TagText calligrapherName
     : TagClose "a"
     : TagOpen "br" []
     : TagOpen "span" _attrsSpan
@@ -50,7 +50,7 @@ parseCharacter
   | Just _        <- find isBoxShow attrsImg
   , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               charCalligrapher = CalligrapherName calligrapher
+               charCalligrapher = CalligrapherName calligrapherName
              , charSource       = Just source
              , charImg          = img
              }
@@ -60,14 +60,14 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText calligraphre
+    : TagText calligrapherName
     : TagClose "a"
     : leftover
     )
   | Just _        <- find isBoxShow attrsImg
   , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               charCalligrapher = CalligrapherName calligraphre
+               charCalligrapher = CalligrapherName calligrapherName
              , charSource       = Nothing
              , charImg          = img
              }

@@ -37,13 +37,14 @@ query :: Manager
       -> Fallbacks
       -> Maybe SkipNotFound
       -> Maybe SaveQuery
+      -> Maybe PreferredOnly
       -> Handler ResultsPage
-query mgr cache sc style author fs skip save = do
+query mgr cache sc style author fs skip save only = do
     liftIO $ when (isJust save) $ cacheQuery cache sc
     mRes <- liftIO $ search CiDianWang mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
     case mRes of
-      Right r -> return $ ResultsPage qry r ps skip
+      Right r -> return $ ResultsPage qry r ps skip only
       Left  e -> throwError $ err501 { errBody = fromString (renderErr e) }
   where
     qry :: Query

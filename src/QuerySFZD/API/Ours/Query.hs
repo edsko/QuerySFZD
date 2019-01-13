@@ -5,6 +5,7 @@
 module QuerySFZD.API.Ours.Query (
     SearchChar(..)
   , SearchChars(..)
+  , searchCharToString
   , searchCharsToString
   , Style(..)
   , styleDescription
@@ -12,6 +13,7 @@ module QuerySFZD.API.Ours.Query (
   , Fallbacks(..)
   , SkipNotFound(..)
   , SaveQuery(..)
+  , PreferredOnly(..)
   , Query(..)
   ) where
 
@@ -27,6 +29,9 @@ import QuerySFZD.Util
 -- | Characters we're seaching for
 newtype SearchChar = SearchChar { searchChar :: Char }
   deriving newtype (Eq, Ord, Show, Serialise)
+
+searchCharToString :: SearchChar -> String
+searchCharToString (SearchChar c) = [c]
 
 -- | We allow to search for multiple characters at once
 --
@@ -93,11 +98,17 @@ data SkipNotFound = SkipNotFound
 -- | Save this query to the history
 data SaveQuery = SaveQuery
 
+-- | Only show the preferred characters
+data PreferredOnly = PreferredOnly
+
 instance FromHttpApiData SkipNotFound where
   parseQueryParam = const (Right SkipNotFound)
 
 instance FromHttpApiData SaveQuery where
   parseQueryParam = const (Right SaveQuery)
+
+instance FromHttpApiData PreferredOnly where
+  parseQueryParam = const (Right PreferredOnly)
 
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right

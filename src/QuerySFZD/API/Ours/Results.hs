@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NamedFieldPuns             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 
@@ -80,10 +81,11 @@ newtype RawResult = RawResult [(String, [Tag String])]
   deriving newtype (Semigroup, Monoid)
 
 data ResultsPage = ResultsPage {
-      rpQuery        :: Query
-    , rpResults      :: Results
-    , rpPreferences  :: Preferences
-    , rpSkipNotFound :: Maybe SkipNotFound
+      rpQuery         :: Query
+    , rpResults       :: Results
+    , rpPreferences   :: Preferences
+    , rpSkipNotFound  :: Maybe SkipNotFound
+    , rpPreferredOnly :: Maybe PreferredOnly
     }
 
 shouldIncludeCalligrapher :: ResultsPage -> CalligrapherName -> Bool
@@ -103,86 +105,140 @@ instance ToMarkup ResultsPage where
                       ++ searchCharsToString queryChars
                       ++ "'"
 
-      case queryCalligrapher of
-        Nothing -> do
-          H.p "Showing results for all calligraphers."
-
-          forM_ calligraphers $ \c ->
-            when (shouldIncludeCalligrapher rp c) $ do
-              H.h2 $ fromString $ "Calligrapher: " ++ calligrapherNameToString c
-
-              H.table ! A.class_ "characters" $ do
-                H.tr $
-                  forM_ (searchCharsToList queryChars) $ \sc ->
-                    H.th $ fromString [searchChar sc]
-                H.tr $
-                  forM_ (searchCharsToList queryChars) $ \sc -> do
-                    let matchesAuthor :: Character -> Bool
-                        matchesAuthor ch = sameCalligrapher c (charCalligrapher ch)
-
-                        matching :: [Character]
-                        matching = filter matchesAuthor $ resultsChars Map.! sc
-
-                    H.td $ do
-                      when (null matching && isLetter (searchChar sc)) $ do
-                        H.img ! A.src "/static/notfound.png"
-                      forM_ matching $ \c -> do
-                        H.img ! A.src (fromString (charImg c))
-                        H.br
-                        case charSource c of
-                          Nothing  -> "(Unknown source)"
-                          Just src -> fromString $ "(" ++ src ++ ")"
-                        H.br
-
-        Just c -> do
-          H.p $ do
-            fromString $ "Showing results for calligrapher "
-                      ++ calligrapherNameToString c ++ "."
-            H.br
-            if null (fallbacks queryFallbacks)
-              then "No fallbacks."
-              else fromString $ "Fallbacks: " ++ renderFallbacks queryFallbacks ++ "."
-
-            H.table ! A.class_ "characters" $ do
-              H.tr $
-                forM_ (searchCharsToList queryChars) $ \sc ->
-                  H.th $ fromString [searchChar sc]
-              H.tr $
-                forM_ (searchCharsToList queryChars) $ \sc -> do
-                  let matching :: [Character]
-                      matching = Preferences.sort rpPreferences charImg
-                               . indexInOrder
-                                   ( (\ch -> sameCalligrapher c (charCalligrapher ch))
-                                   : map (\fb ch -> sameCalligrapher fb (charCalligrapher ch))
-                                         (fallbacks queryFallbacks)
-                                   )
-                               $ resultsChars Map.! sc
-
-                  H.td $ do
-                    when (null matching && isLetter (searchChar sc)) $ do
-                      H.img ! A.src "/static/notfound.png"
-                    forM_ matching $ \ch -> do
-                      H.img ! A.src (fromString (charImg ch))
-                            ! A.onclick (fromString ("prefer(\"" ++ charImg ch ++ "\");"))
-                      H.br
-                      fromString $ calligrapherNameToString (charCalligrapher ch)
-                      forM_ (charSource ch) $ \src ->
-                        fromString $ " (" ++ src ++ ")"
-                      H.br
+      case (queryCalligrapher, rpPreferredOnly) of
+        (Nothing, _)                 -> resultsPerCalligrapher rp
+        (Just c, Nothing)            -> resultsPerCharacter  (byCharacter rp c)
+        (Just c, Just PreferredOnly) -> resultsPreferredOnly (byCharacter rp c)
 
       renderRawResult resultsRaw
     where
-      Query{..}   = rpQuery
-      Results{..} = rpResults
+      Query{queryChars, queryCalligrapher} = rpQuery
+      Results{resultsRaw} = rpResults
 
-      flat :: [Character]
-      flat = concat (Map.elems resultsChars)
+{-------------------------------------------------------------------------------
+  Default results page: show per calligrapher
+-------------------------------------------------------------------------------}
 
-      calligraphers :: [CalligrapherName]
-      calligraphers = nubCalligrapherNames $ map charCalligrapher flat
+resultsPerCalligrapher :: ResultsPage -> Html
+resultsPerCalligrapher rp@ResultsPage{..} = do
+    H.p "Showing results for all calligraphers."
 
-      renderFallbacks :: Fallbacks -> String
-      renderFallbacks = intercalate ", " . map calligrapherNameToString . fallbacks
+    forM_ calligraphers $ \c ->
+      when (shouldIncludeCalligrapher rp c) $ do
+        H.h2 $ fromString $ "Calligrapher: " ++ calligrapherNameToString c
+
+        H.table ! A.class_ "characters" $ do
+          H.tr $
+            forM_ (searchCharsToList queryChars) $ \sc ->
+              H.th $ fromString [searchChar sc]
+          H.tr $
+            forM_ (searchCharsToList queryChars) $ \sc -> do
+              let matchesAuthor :: Character -> Bool
+                  matchesAuthor ch = sameCalligrapher c (charCalligrapher ch)
+
+                  matching :: [Character]
+                  matching = filter matchesAuthor $ resultsChars Map.! sc
+
+              H.td $ do
+                when (null matching && isLetter (searchChar sc)) $ do
+                  H.img ! A.src "/static/notfound.png"
+                forM_ matching $ \ch -> do
+                  H.img ! A.src (fromString (charImg ch))
+                  H.br
+                  case charSource ch of
+                    Nothing  -> "(Unknown source)"
+                    Just src -> fromString $ "(" ++ src ++ ")"
+                  H.br
+  where
+    Query{queryChars} = rpQuery
+    Results{resultsChars} = rpResults
+
+    flat :: [Character]
+    flat = concat (Map.elems resultsChars)
+
+    calligraphers :: [CalligrapherName]
+    calligraphers = nubCalligrapherNames $ map charCalligrapher flat
+
+{-------------------------------------------------------------------------------
+  Characters on the horizontal axis, all possibilities on the vertical
+-------------------------------------------------------------------------------}
+
+resultsPerCharacter :: ByCharacter -> Html
+resultsPerCharacter ByCharacter{..} = do
+    H.p $ do
+      fromString $ "Showing results for calligrapher "
+                ++ calligrapherNameToString bcPreferred ++ "."
+      H.br
+      if null bcFallbacks
+        then "No fallbacks."
+        else fromString $ "Fallbacks: " ++ renderFallbacks bcFallbacks ++ "."
+
+      H.table ! A.class_ "characters" $ do
+        H.tr $
+          forM_ bcSearchChars $ \sc ->
+            H.th $ fromString (searchCharToString sc)
+        H.tr $
+          forM_ bcSearchChars $ \sc -> do
+            let matching = bcMatches Map.! sc
+            H.td $ do
+              when (null matching && isLetter (searchChar sc)) $ do
+                H.img ! A.src "/static/notfound.png"
+              forM_ matching $ \ch -> do
+                H.img ! A.src (fromString (charImg ch))
+                      ! A.onclick (fromString ("prefer(\"" ++ charImg ch ++ "\");"))
+                H.br
+                fromString $ calligrapherNameToString (charCalligrapher ch)
+                forM_ (charSource ch) $ \src ->
+                  fromString $ " (" ++ src ++ ")"
+                H.br
+  where
+    renderFallbacks :: [CalligrapherName] -> String
+    renderFallbacks = intercalate ", " . map calligrapherNameToString
+
+{-------------------------------------------------------------------------------
+  Rendering page
+-------------------------------------------------------------------------------}
+
+resultsPreferredOnly :: ByCharacter -> Html
+resultsPreferredOnly ByCharacter{..} = do
+    forM_ bcSearchChars $ \sc ->
+      case bcMatches Map.! sc of
+        [] -> fromString $ "(" ++ searchCharToString sc ++ ")"
+        (ch:_) -> do
+          H.img ! A.src (fromString (charImg ch))
+
+{-------------------------------------------------------------------------------
+  Organize results by character
+-------------------------------------------------------------------------------}
+
+data ByCharacter = ByCharacter {
+      bcPreferred   :: CalligrapherName
+    , bcFallbacks   :: [CalligrapherName]
+    , bcSearchChars :: [SearchChar]
+    , bcMatches     :: Map SearchChar [Character]
+    }
+
+byCharacter :: ResultsPage -> CalligrapherName -> ByCharacter
+byCharacter ResultsPage{..} c = ByCharacter {
+      bcPreferred   = c
+    , bcFallbacks   = fallbacks queryFallbacks
+    , bcSearchChars = searchCharsToList queryChars
+    , bcMatches     = Map.fromList $ map (\sc -> (sc, orderedMatches sc)) $
+                        searchCharsToList queryChars
+    }
+  where
+    Query{queryFallbacks, queryChars} = rpQuery
+    Results{resultsChars} = rpResults
+
+    orderedMatches :: SearchChar -> [Character]
+    orderedMatches sc =
+          Preferences.sort rpPreferences charImg
+        . indexInOrder
+            ( (\ch -> sameCalligrapher c (charCalligrapher ch))
+            : map (\fb ch -> sameCalligrapher fb (charCalligrapher ch))
+                  (fallbacks queryFallbacks)
+            )
+        $ resultsChars Map.! sc
 
 {-------------------------------------------------------------------------------
   Debugging

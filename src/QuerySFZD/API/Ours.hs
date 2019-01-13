@@ -21,12 +21,13 @@ type API = Get '[HTML] IndexPage
       :<|> "prefer" :> ReqBody '[PlainText] String :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
-type Search = QueryParam' '[Required] "characters"   SearchChars
-           :> QueryParam' '[Required] "style"        Style
-           :> QueryParam' '[Required] "author"       CalligrapherName
-           :> QueryParam' '[Required] "fallbacks"    Fallbacks
-           :> QueryParam' '[Optional] "skipNotFound" SkipNotFound
-           :> QueryParam' '[Optional] "saveQuery"    SaveQuery
+type Search = QueryParam' '[Required] "characters"    SearchChars
+           :> QueryParam' '[Required] "style"         Style
+           :> QueryParam' '[Required] "author"        CalligrapherName
+           :> QueryParam' '[Required] "fallbacks"     Fallbacks
+           :> QueryParam' '[Optional] "skipNotFound"  SkipNotFound
+           :> QueryParam' '[Optional] "saveQuery"     SaveQuery
+           :> QueryParam' '[Optional] "preferredOnly" PreferredOnly
            :> Get '[HTML] ResultsPage
 
 api :: Proxy API
