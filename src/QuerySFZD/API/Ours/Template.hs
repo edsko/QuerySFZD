@@ -16,7 +16,9 @@ template body =
       H.head $ do
         H.link ! A.rel "stylesheet"
                ! A.href "static/style.css"
-        H.script ! A.src "static/handlers.js" $ return ()
+        H.script ! A.type_ "application/javascript"
+                 ! A.src "static/handlers.js"
+                 $ return ()
       H.body $ do
         H.h1 $ H.a ! A.href "/" $ "Search 书法字典"
         body

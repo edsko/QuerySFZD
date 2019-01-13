@@ -19,3 +19,11 @@ table.characters img {
   height: 168px;
   border: 1px solid #B8D9F4;
 }
+
+canvas.mizige {
+  width: 200px;
+  height: 200px;
+  background-position: center;
+  background-size: 100% 100%;
+  border: black 1px solid;  
+}

@@ -6,6 +6,7 @@
 {-# LANGUAGE NamedFieldPuns             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module QuerySFZD.API.Ours.Results (
     Results(..)
@@ -106,9 +107,9 @@ instance ToMarkup ResultsPage where
                       ++ "'"
 
       case (queryCalligrapher, rpPreferredOnly) of
-        (Nothing, _)                 -> resultsPerCalligrapher rp
-        (Just c, Nothing)            -> resultsPerCharacter  (byCharacter rp c)
-        (Just c, Just PreferredOnly) -> resultsPreferredOnly (byCharacter rp c)
+        (Nothing, _)           -> resultsPerCalligrapher rp
+        (Just c, Nothing)      -> resultsPerCharacter  (byCharacter rp c)
+        (Just c, Just overlay) -> resultsPreferredOnly (byCharacter rp c) overlay
 
       renderRawResult resultsRaw
     where
@@ -199,13 +200,27 @@ resultsPerCharacter ByCharacter{..} = do
   Rendering page
 -------------------------------------------------------------------------------}
 
-resultsPreferredOnly :: ByCharacter -> Html
-resultsPreferredOnly ByCharacter{..} = do
-    forM_ bcSearchChars $ \sc ->
+resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
+resultsPreferredOnly ByCharacter{..} overlay = do
+    forM_ (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
       case bcMatches Map.! sc of
         [] -> fromString $ "(" ++ searchCharToString sc ++ ")"
         (ch:_) -> do
-          H.img ! A.src (fromString (charImg ch))
+          let bg = "background-image: url(\""
+                ++ fromString (charImg ch)
+                ++ "\")"
+          H.canvas ! A.style (fromString bg)
+                   ! A.class_ "mizige"
+                   ! A.id (fromString ("canvas" ++ show i))
+                   $ return ()
+    H.script ! A.type_ "application/javascript" $ do
+      fromString $ concat [
+          "document.addEventListener('DOMContentLoaded', function() { "
+        , "  addOverlays(" ++ show (length bcSearchChars)
+                   ++ ", " ++ show (preferredOverlay overlay)
+                   ++ ");"
+        , "}, false);"
+        ]
 
 {-------------------------------------------------------------------------------
   Organize results by character

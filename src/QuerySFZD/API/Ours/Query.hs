@@ -14,6 +14,7 @@ module QuerySFZD.API.Ours.Query (
   , SkipNotFound(..)
   , SaveQuery(..)
   , PreferredOnly(..)
+  , preferredOverlay
   , Query(..)
   ) where
 
@@ -99,7 +100,15 @@ data SkipNotFound = SkipNotFound
 data SaveQuery = SaveQuery
 
 -- | Only show the preferred characters
-data PreferredOnly = PreferredOnly
+--
+-- We specify which overlay we want
+data PreferredOnly =
+    OverlayNone
+  | OverlayMiZiGe
+
+preferredOverlay :: PreferredOnly -> String
+preferredOverlay OverlayNone   = ""
+preferredOverlay OverlayMiZiGe = "mizige"
 
 instance FromHttpApiData SkipNotFound where
   parseQueryParam = const (Right SkipNotFound)
@@ -108,7 +117,9 @@ instance FromHttpApiData SaveQuery where
   parseQueryParam = const (Right SaveQuery)
 
 instance FromHttpApiData PreferredOnly where
-  parseQueryParam = const (Right PreferredOnly)
+  parseQueryParam ""       = Right OverlayNone
+  parseQueryParam "mizige" = Right OverlayMiZiGe
+  parseQueryParam str      = Left ("Invalid overlay " <> str)
 
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right
