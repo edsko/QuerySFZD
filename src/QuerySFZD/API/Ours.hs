@@ -14,6 +14,7 @@ import Servant.HTML.Blaze
 import QuerySFZD.API.Ours.IndexPage as Export
 import QuerySFZD.API.Ours.Query as Export
 import QuerySFZD.API.Ours.Results as Export
+import QuerySFZD.Data.Calligraphers
 
 type API = Get '[HTML] IndexPage
       :<|> "search" :> Search
@@ -22,7 +23,7 @@ type API = Get '[HTML] IndexPage
 
 type Search = QueryParam' '[Required] "characters"   SearchChars
            :> QueryParam' '[Required] "style"        Style
-           :> QueryParam' '[Required] "author"       Author
+           :> QueryParam' '[Required] "author"       CalligrapherName
            :> QueryParam' '[Required] "fallbacks"    Fallbacks
            :> QueryParam' '[Optional] "skipNotFound" SkipNotFound
            :> QueryParam' '[Optional] "saveQuery"    SaveQuery

@@ -19,6 +19,7 @@ import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.CiDianWang
 import QuerySFZD.Cache
+import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
@@ -45,7 +46,7 @@ baseUrlNext = BaseUrl {
 
 rawSearch :: CdwQuery
           -> CDW SearchChar
-          -> CDW Author
+          -> CDW CalligrapherName
           -> CDW Style
           -> Maybe CdwReferer
           -> ClientM CdwResults
@@ -106,7 +107,7 @@ search mgr cache Query{..} =
         rawSearch
           CdwCalligraphy
           (CDW c)
-          (CDW (Author ""))
+          (CDW (CalligrapherName ""))
           (CDW queryStyle)
           (Just CdwRefererSelf)
 

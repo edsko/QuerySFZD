@@ -10,7 +10,6 @@ module QuerySFZD.API.Ours.Results (
     Results(..)
   , nubResults
   , Character(..)
-  , Author(..)
   , RawResult(..)
   , ResultsPage(..)
   ) where
@@ -19,10 +18,10 @@ import Codec.Serialise
 import Control.Monad
 import Data.Char (isLetter)
 import Data.Foldable (forM_)
-import Data.List (intercalate, nub)
+import Data.Function (on)
+import Data.List (intercalate, nubBy)
 import Data.Map.Strict (Map)
 import Data.Maybe (isJust)
-import Data.Set (Set)
 import Data.String (fromString)
 import GHC.Generics (Generic)
 import Text.Blaze hiding (Tag)
@@ -30,13 +29,13 @@ import Text.Blaze.Html5 (Html)
 import Text.HTML.TagSoup (Tag)
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
 import QuerySFZD.Cache.Preferences (Preferences)
+import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 import qualified QuerySFZD.Cache.Preferences as Preferences
@@ -63,17 +62,17 @@ instance Monoid Results where
 
 nubResults :: Results -> Results
 nubResults Results{..} = Results {
-      resultsChars = nub <$> resultsChars
+      resultsChars = nubBy ((==) `on` charImg) <$> resultsChars
     , resultsRaw   = resultsRaw
     }
 
 -- | Returned characters
 data Character = Character {
-      charImg    :: String
-    , charAuthor :: Author
-    , charSource :: Maybe String
+      charImg          :: String
+    , charCalligrapher :: CalligrapherName
+    , charSource       :: Maybe String
     }
-  deriving stock    (Generic, Eq)
+  deriving stock    (Generic)
   deriving anyclass Serialise
 
 -- | The raw tagsoup (for debugging/development)
@@ -87,8 +86,8 @@ data ResultsPage = ResultsPage {
     , rpSkipNotFound :: Maybe SkipNotFound
     }
 
-shouldIncludeAuthor :: ResultsPage -> Author -> Bool
-shouldIncludeAuthor ResultsPage{..} a
+shouldIncludeCalligrapher :: ResultsPage -> CalligrapherName -> Bool
+shouldIncludeCalligrapher ResultsPage{..} c
   | not skipNotFound = True
   | otherwise        = all wrote (searchCharsToList (queryChars rpQuery))
   where
@@ -96,7 +95,7 @@ shouldIncludeAuthor ResultsPage{..} a
     Results{..}  = rpResults
 
     wrote :: SearchChar -> Bool
-    wrote sc = any ((== a) . charAuthor) (resultsChars Map.! sc)
+    wrote sc = any (sameCalligrapher c . charCalligrapher) (resultsChars Map.! sc)
 
 instance ToMarkup ResultsPage where
   toMarkup rp@ResultsPage{..} = template $ do
@@ -104,13 +103,13 @@ instance ToMarkup ResultsPage where
                       ++ searchCharsToString queryChars
                       ++ "'"
 
-      case queryAuthor of
+      case queryCalligrapher of
         Nothing -> do
           H.p "Showing results for all calligraphers."
 
-          forM_ (Set.toList authors) $ \author ->
-            when (shouldIncludeAuthor rp author) $ do
-              H.h2 $ fromString $ "Calligrapher: " ++ authorToString author
+          forM_ calligraphers $ \c ->
+            when (shouldIncludeCalligrapher rp c) $ do
+              H.h2 $ fromString $ "Calligrapher: " ++ calligrapherNameToString c
 
               H.table ! A.class_ "characters" $ do
                 H.tr $
@@ -119,7 +118,7 @@ instance ToMarkup ResultsPage where
                 H.tr $
                   forM_ (searchCharsToList queryChars) $ \sc -> do
                     let matchesAuthor :: Character -> Bool
-                        matchesAuthor c = charAuthor c == author
+                        matchesAuthor ch = sameCalligrapher c (charCalligrapher ch)
 
                         matching :: [Character]
                         matching = filter matchesAuthor $ resultsChars Map.! sc
@@ -135,9 +134,10 @@ instance ToMarkup ResultsPage where
                           Just src -> fromString $ "(" ++ src ++ ")"
                         H.br
 
-        Just (Author a) -> do
+        Just c -> do
           H.p $ do
-            fromString $ "Showing results for calligrapher " ++ a ++ "."
+            fromString $ "Showing results for calligrapher "
+                      ++ calligrapherNameToString c ++ "."
             H.br
             if null (fallbacks queryFallbacks)
               then "No fallbacks."
@@ -152,8 +152,8 @@ instance ToMarkup ResultsPage where
                   let matching :: [Character]
                       matching = Preferences.sort rpPreferences charImg
                                . indexInOrder
-                                   ( (\c -> charAuthor c == Author a)
-                                   : map (\fb c -> charAuthor c == fb)
+                                   ( (\ch -> sameCalligrapher c (charCalligrapher ch))
+                                   : map (\fb ch -> sameCalligrapher fb (charCalligrapher ch))
                                          (fallbacks queryFallbacks)
                                    )
                                $ resultsChars Map.! sc
@@ -161,12 +161,12 @@ instance ToMarkup ResultsPage where
                   H.td $ do
                     when (null matching && isLetter (searchChar sc)) $ do
                       H.img ! A.src "/static/notfound.png"
-                    forM_ matching $ \c -> do
-                      H.img ! A.src (fromString (charImg c))
-                            ! A.onclick (fromString ("prefer(\"" ++ charImg c ++ "\");"))
+                    forM_ matching $ \ch -> do
+                      H.img ! A.src (fromString (charImg ch))
+                            ! A.onclick (fromString ("prefer(\"" ++ charImg ch ++ "\");"))
                       H.br
-                      fromString $ authorToString (charAuthor c)
-                      forM_ (charSource c) $ \src ->
+                      fromString $ calligrapherNameToString (charCalligrapher ch)
+                      forM_ (charSource ch) $ \src ->
                         fromString $ " (" ++ src ++ ")"
                       H.br
 
@@ -178,11 +178,11 @@ instance ToMarkup ResultsPage where
       flat :: [Character]
       flat = concat (Map.elems resultsChars)
 
-      authors :: Set Author
-      authors = Set.fromList $ map charAuthor flat
+      calligraphers :: [CalligrapherName]
+      calligraphers = nubCalligrapherNames $ map charCalligrapher flat
 
       renderFallbacks :: Fallbacks -> String
-      renderFallbacks = intercalate ", " . map authorToString . fallbacks
+      renderFallbacks = intercalate ", " . map calligrapherNameToString . fallbacks
 
 {-------------------------------------------------------------------------------
   Debugging

@@ -16,6 +16,7 @@ import Text.HTML.TagSoup
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
 
 import QuerySFZD.API.Ours.Results
+import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 data CdwResults = CdwResults {
@@ -39,7 +40,7 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author
+    : TagText calligrapher
     : TagClose "a"
     : TagOpen "br" []
     : TagOpen "span" _attrsSpan
@@ -49,9 +50,9 @@ parseCharacter
   | Just _        <- find isBoxShow attrsImg
   , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               charAuthor = Author author
-             , charSource = Just source
-             , charImg    = img
+               charCalligrapher = CalligrapherName calligrapher
+             , charSource       = Just source
+             , charImg          = img
              }
          , leftover
          )
@@ -59,16 +60,16 @@ parseCharacter
     ( TagOpen "img" attrsImg
     : TagText " "
     : TagOpen "a" _attrsA
-    : TagText author
+    : TagText calligraphre
     : TagClose "a"
     : leftover
     )
   | Just _        <- find isBoxShow attrsImg
   , Just (_, img) <- find (isAttr "src") attrsImg
   = Just ( Character {
-               charAuthor = Author author
-             , charSource = Nothing
-             , charImg    = img
+               charCalligrapher = CalligrapherName calligraphre
+             , charSource       = Nothing
+             , charImg          = img
              }
          , leftover
          )

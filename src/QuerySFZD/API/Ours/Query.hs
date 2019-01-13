@@ -9,7 +9,6 @@ module QuerySFZD.API.Ours.Query (
   , Style(..)
   , styleDescription
   , styleHttpApiData
-  , Author(..)
   , Fallbacks(..)
   , SkipNotFound(..)
   , SaveQuery(..)
@@ -22,6 +21,7 @@ import Servant
 
 import qualified Data.Text as Text
 
+import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 -- | Characters we're seaching for
@@ -76,19 +76,15 @@ instance FromHttpApiData Style where
   parseQueryParam p   = Left $ "Could not parse style '" <> p <> "'"
 
 data Query = Query {
-      queryChars     :: SearchChars
-    , queryStyle     :: Style
-    , queryAuthor    :: Maybe Author
-    , queryFallbacks :: Fallbacks
+      queryChars        :: SearchChars
+    , queryStyle        :: Style
+    , queryCalligrapher :: Maybe CalligrapherName
+    , queryFallbacks    :: Fallbacks
     }
   deriving (Show)
 
--- | Author
-newtype Author = Author { authorToString :: String }
-  deriving newtype (Show, Eq, Ord, Serialise, FromHttpApiData)
-
 -- | Fallbacks
-newtype Fallbacks = Fallbacks { fallbacks :: [Author] }
+newtype Fallbacks = Fallbacks { fallbacks :: [CalligrapherName] }
   deriving newtype (Show)
 
 -- | Skip entries for authors with not-found characters
@@ -106,7 +102,7 @@ instance FromHttpApiData SaveQuery where
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right
                   . Fallbacks
-                  . map Author
+                  . map CalligrapherName
                   . filter (not . null)
                   . map trim
                   . explode ','

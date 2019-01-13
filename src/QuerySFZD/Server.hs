@@ -15,6 +15,7 @@ import Servant.Client
 import QuerySFZD.API.Ours
 import QuerySFZD.Cache
 import QuerySFZD.Client
+import QuerySFZD.Data.Calligraphers
 
 server :: Manager -> Cache -> Server API
 server mgr cache =
@@ -32,7 +33,7 @@ query :: Manager
       -> Cache
       -> SearchChars
       -> Style
-      -> Author
+      -> CalligrapherName
       -> Fallbacks
       -> Maybe SkipNotFound
       -> Maybe SaveQuery
@@ -47,12 +48,12 @@ query mgr cache sc style author fs skip save = do
   where
     qry :: Query
     qry = Query {
-          queryChars     = sc
-        , queryStyle     = style
-        , queryAuthor    = if null (authorToString author)
-                             then Nothing
-                             else Just author
-        , queryFallbacks = fs
+          queryChars        = sc
+        , queryStyle        = style
+        , queryCalligrapher = if null (calligrapherNameToString author)
+                               then Nothing
+                               else Just author
+        , queryFallbacks    = fs
         }
 
     renderErr :: ServantError -> String

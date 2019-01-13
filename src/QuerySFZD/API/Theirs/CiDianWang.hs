@@ -23,6 +23,7 @@ import qualified Data.Text as Text
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
+import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ type API = Search :<|> NextPage
 -- | Search for a character
 type Search = QueryParam' '[Required] "m" CdwQuery
            :> QueryParam' '[Required] "q" (CDW SearchChar)
-           :> QueryParam' '[Required] "z" (CDW Author)
+           :> QueryParam' '[Required] "z" (CDW CalligrapherName)
            :> QueryParam' '[Required] "y" (CDW Style)
            :> Header' '[] "Referer" CdwReferer
            :> Get '[HTML] CdwResults
@@ -72,8 +73,8 @@ newtype CDW a = CDW a
 instance ToHttpApiData (CDW SearchChar) where
   toQueryParam (CDW (SearchChar c)) = Text.pack [c]
 
-instance ToHttpApiData (CDW Author) where
-  toQueryParam (CDW (Author a)) = Text.pack a
+instance ToHttpApiData (CDW CalligrapherName) where
+  toQueryParam (CDW (CalligrapherName a)) = Text.pack a
 
 instance ToHttpApiData (CDW Style) where
   toQueryParam (CDW SemiCursive) = "0"

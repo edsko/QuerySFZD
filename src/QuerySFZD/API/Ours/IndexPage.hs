@@ -58,7 +58,7 @@ instance ToMarkup IndexPage where
                       ! A.id "author"
               H.select ! A.onclick "selectAuthor(this.value);" $ do
                 H.option ! A.value "" $ fromString "Or choose from list"
-                forM_ calligraphers $ \Calligrapher{..} ->
+                forM_ knownCalligraphers $ \Calligrapher{..} ->
                   H.option ! A.value (fromString cSimplified) $
                     fromString $ cSimplified ++ " " ++ cPinyin
           H.tr $ do
@@ -69,7 +69,7 @@ instance ToMarkup IndexPage where
               H.select ! A.onclick "addFallback(this.value);" $ do
                 H.option ! A.value "" $ fromString "Or add from list"
                 H.option ! A.value (fromString zhengkai') $ "正楷"
-                forM_ calligraphers $ \Calligrapher{..} ->
+                forM_ knownCalligraphers $ \Calligrapher{..} ->
                   H.option ! A.value (fromString cSimplified) $
                     fromString $ cSimplified ++ " " ++ cPinyin
           H.tr $ do
