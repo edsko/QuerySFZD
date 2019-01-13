@@ -4,7 +4,9 @@ module QuerySFZD.Server (
     server
   ) where
 
+import Control.Monad
 import Control.Monad.IO.Class
+import Data.Maybe (isJust)
 import Data.String
 import Network.HTTP.Client (Manager)
 import Servant
@@ -16,10 +18,15 @@ import QuerySFZD.Client
 
 server :: Manager -> Cache -> Server API
 server mgr cache =
-         return IndexPage
+         presentIndexPage cache
     :<|> query mgr cache
     :<|> prefer cache
     :<|> serveDirectoryWebApp "static"
+
+presentIndexPage :: Cache -> Handler IndexPage
+presentIndexPage cache = do
+    queries <- liftIO $ getCachedQueries cache
+    return $ IndexPage queries
 
 query :: Manager
       -> Cache
@@ -28,8 +35,10 @@ query :: Manager
       -> Author
       -> Fallbacks
       -> Maybe SkipNotFound
+      -> Maybe SaveQuery
       -> Handler ResultsPage
-query mgr cache sc style author fs skip = do
+query mgr cache sc style author fs skip save = do
+    liftIO $ when (isJust save) $ cacheQuery cache sc
     mRes <- liftIO $ search CiDianWang mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
     case mRes of

@@ -12,6 +12,7 @@ module QuerySFZD.API.Ours.Query (
   , Author(..)
   , Fallbacks(..)
   , SkipNotFound(..)
+  , SaveQuery(..)
   , Query(..)
   ) where
 
@@ -25,14 +26,14 @@ import QuerySFZD.Util
 
 -- | Characters we're seaching for
 newtype SearchChar = SearchChar { searchChar :: Char }
-  deriving newtype (Eq, Ord, Show)
+  deriving newtype (Eq, Ord, Show, Serialise)
 
 -- | We allow to search for multiple characters at once
 --
 -- The order of the list here matters: we want to display the characters
 -- in the order the user requested them.
 newtype SearchChars = SearchChars { searchCharsToList :: [SearchChar] }
-  deriving newtype (Semigroup, Monoid, Show)
+  deriving newtype (Eq, Semigroup, Monoid, Show, Serialise)
 
 searchCharsToString :: SearchChars -> String
 searchCharsToString = coerce
@@ -93,8 +94,14 @@ newtype Fallbacks = Fallbacks { fallbacks :: [Author] }
 -- | Skip entries for authors with not-found characters
 data SkipNotFound = SkipNotFound
 
+-- | Save this query to the history
+data SaveQuery = SaveQuery
+
 instance FromHttpApiData SkipNotFound where
   parseQueryParam = const (Right SkipNotFound)
+
+instance FromHttpApiData SaveQuery where
+  parseQueryParam = const (Right SaveQuery)
 
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right

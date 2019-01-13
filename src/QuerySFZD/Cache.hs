@@ -1,10 +1,15 @@
 module QuerySFZD.Cache (
     Cache -- opaque
   , withCache
+    -- * Characters
   , cacheChar
   , getCachedChar
+    -- * Preferences
   , cachePreference
   , getCachedPreferences
+    -- * Queries
+  , cacheQuery
+  , getCachedQueries
   ) where
 
 import Codec.Serialise
@@ -15,9 +20,11 @@ import System.FilePath
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
-import QuerySFZD.Preferences (Preferences)
+import QuerySFZD.Cache.Preferences (Preferences)
+import QuerySFZD.Cache.Queries (Queries)
 
-import qualified QuerySFZD.Preferences as Preferences
+import qualified QuerySFZD.Cache.Preferences as Preferences
+import qualified QuerySFZD.Cache.Queries as Queries
 
 {-------------------------------------------------------------------------------
   Cache initialization
@@ -80,6 +87,26 @@ getCachedPreferences cache = do
     path = preferencesPath cache
 
 {-------------------------------------------------------------------------------
+  Queries
+-------------------------------------------------------------------------------}
+
+cacheQuery :: Cache -> SearchChars -> IO ()
+cacheQuery cache sc = do
+    scs <- getCachedQueries cache
+    writeFileSerialise path $ Queries.insert sc scs
+  where
+    path = queriesPath cache
+
+getCachedQueries :: Cache -> IO Queries
+getCachedQueries cache = do
+    exists <- doesFileExist path
+    if exists
+      then readFileDeserialise path
+      else return Queries.empty
+  where
+    path = queriesPath cache
+
+{-------------------------------------------------------------------------------
   Internal
 -------------------------------------------------------------------------------}
 
@@ -89,3 +116,6 @@ mkPath (Cache cache) style (SearchChar c) =
 
 preferencesPath :: Cache -> FilePath
 preferencesPath (Cache cache) = cache </> "preferences"
+
+queriesPath :: Cache -> FilePath
+queriesPath (Cache cache) = cache </> "queries"

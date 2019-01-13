@@ -15,12 +15,15 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
+import QuerySFZD.Cache.Queries (Queries)
 import QuerySFZD.Data.Calligraphers
 
-data IndexPage = IndexPage
+import qualified QuerySFZD.Cache.Queries as Queries
+
+data IndexPage = IndexPage Queries
 
 instance ToMarkup IndexPage where
-  toMarkup IndexPage = template $ do
+  toMarkup (IndexPage history) = template $ do
       -- TODO: This manual path (@search@) should be avoided.
       H.form ! A.action "search" $ do
         H.table $ do
@@ -28,7 +31,18 @@ instance ToMarkup IndexPage where
             H.td $ "Characters"
             H.td $ do
               H.input ! A.name "characters"
-              H.input ! A.type_ "submit"
+                      ! A.id "query"
+              H.select ! A.onclick "useQuery(this.value);" $ do
+                H.option ! A.value "" $ fromString "Or choose from list"
+                forM_ (map searchCharsToString $ Queries.toList history) $ \sc ->
+                  H.option ! A.value (fromString sc) $
+                    fromString sc
+          H.tr $ do
+            H.td $ return ()
+            H.td $ do
+              H.input ! A.type_ "checkbox"
+                      ! A.name  "saveQuery"
+              "Save query"
           H.tr $ do
             H.td $ "Style"
             H.td $
@@ -43,7 +57,7 @@ instance ToMarkup IndexPage where
               H.input ! A.name "author"
                       ! A.id "author"
               H.select ! A.onclick "selectAuthor(this.value);" $ do
-                H.option $ fromString "Or choose from list"
+                H.option ! A.value "" $ fromString "Or choose from list"
                 forM_ calligraphers $ \Calligrapher{..} ->
                   H.option ! A.value (fromString cSimplified) $
                     fromString $ cSimplified ++ " " ++ cPinyin
@@ -53,7 +67,7 @@ instance ToMarkup IndexPage where
               H.input ! A.name "fallbacks"
                       ! A.id "fallbacks"
               H.select ! A.onclick "addFallback(this.value);" $ do
-                H.option $ fromString "Or add from list"
+                H.option ! A.value "" $ fromString "Or add from list"
                 H.option ! A.value (fromString zhengkai') $ "正楷"
                 forM_ calligraphers $ \Calligrapher{..} ->
                   H.option ! A.value (fromString cSimplified) $
@@ -61,9 +75,12 @@ instance ToMarkup IndexPage where
           H.tr $ do
             H.td $ "Options"
             H.td $ do
-              H.input ! A.name "skipnotfound"
+              H.input ! A.name "skipNotFound"
                       ! A.type_ "checkbox"
               "Require all characters"
+          H.tr $ do
+            H.td $ return ()
+            H.td $ H.input ! A.type_ "submit"
     where
       zhengkai' :: String
       zhengkai' = intercalate "," $ map cSimplified zhengkai

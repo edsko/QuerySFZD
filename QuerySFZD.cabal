@@ -24,10 +24,11 @@ executable QuerySFZD
                        QuerySFZD.API.Theirs.CiDianWang
                        QuerySFZD.API.Theirs.CiDianWang.Results
                        QuerySFZD.Cache
+                       QuerySFZD.Cache.Preferences
+                       QuerySFZD.Cache.Queries
                        QuerySFZD.Client
                        QuerySFZD.Client.CiDianWang
                        QuerySFZD.Data.Calligraphers
-                       QuerySFZD.Preferences
                        QuerySFZD.Server
                        QuerySFZD.Util
   -- other-extensions:

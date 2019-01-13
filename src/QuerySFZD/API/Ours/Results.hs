@@ -36,10 +36,10 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Template
-import QuerySFZD.Preferences
+import QuerySFZD.Cache.Preferences (Preferences)
 import QuerySFZD.Util
 
-import qualified QuerySFZD.Preferences as Preferences
+import qualified QuerySFZD.Cache.Preferences as Preferences
 
 data Results = Results {
       resultsChars :: Map SearchChar [Character]

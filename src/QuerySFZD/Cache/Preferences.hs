@@ -6,7 +6,7 @@
 -- | Preferences
 --
 -- Intended for qualified import
-module QuerySFZD.Preferences (
+module QuerySFZD.Cache.Preferences (
     Preferences -- opaque
   , empty
   , prefer

@@ -27,3 +27,8 @@ function addFallback(author) {
     newValue = oldValue + "," + author;
   fallbacks.value = newValue;
 }
+
+function useQuery(query) {
+  console.log("Using query " + query);
+  document.getElementById("query").value = query;
+}

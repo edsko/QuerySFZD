@@ -24,7 +24,8 @@ type Search = QueryParam' '[Required] "characters"   SearchChars
            :> QueryParam' '[Required] "style"        Style
            :> QueryParam' '[Required] "author"       Author
            :> QueryParam' '[Required] "fallbacks"    Fallbacks
-           :> QueryParam' '[Optional] "skipnotfound" SkipNotFound
+           :> QueryParam' '[Optional] "skipNotFound" SkipNotFound
+           :> QueryParam' '[Optional] "saveQuery"    SaveQuery
            :> Get '[HTML] ResultsPage
 
 api :: Proxy API
