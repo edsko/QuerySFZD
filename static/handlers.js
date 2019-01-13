@@ -48,6 +48,8 @@ function addOverlay(canvas, overlay) {
     case "mizige":
       addMizige(canvas);
       break;
+    case "":
+      break;
     default:
       console.log("Unknown overlay " + overlay);
       break;
@@ -55,8 +57,32 @@ function addOverlay(canvas, overlay) {
 }
 
 function addMizige(canvas) {
-  var ctx = canvas.getContext("2d");
-  ctx.moveTo(0,0);
-  ctx.lineTo(200,100);
+  var ctx    = canvas.getContext("2d");
+  var width  = canvas.width;
+  var height = canvas.height;
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#0000ff90";
+  ctx.setLineDash([10,10]);
+
+  ctx.beginPath();
+  ctx.moveTo(0,0.5 * height);
+  ctx.lineTo(width,0.5 * height);
   ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0.5 * width,0);
+  ctx.lineTo(0.5 * width,height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(width,height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(width,0);
+  ctx.lineTo(0,height);
+  ctx.stroke();
+
 }

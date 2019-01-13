@@ -102,10 +102,6 @@ shouldIncludeCalligrapher ResultsPage{..} c
 
 instance ToMarkup ResultsPage where
   toMarkup rp@ResultsPage{..} = template $ do
-      H.p $ fromString $ "Search results for '"
-                      ++ searchCharsToString queryChars
-                      ++ "'"
-
       case (queryCalligrapher, rpPreferredOnly) of
         (Nothing, _)           -> resultsPerCalligrapher rp
         (Just c, Nothing)      -> resultsPerCharacter  (byCharacter rp c)
@@ -113,7 +109,7 @@ instance ToMarkup ResultsPage where
 
       renderRawResult resultsRaw
     where
-      Query{queryChars, queryCalligrapher} = rpQuery
+      Query{queryCalligrapher} = rpQuery
       Results{resultsRaw} = rpResults
 
 {-------------------------------------------------------------------------------
@@ -122,7 +118,10 @@ instance ToMarkup ResultsPage where
 
 resultsPerCalligrapher :: ResultsPage -> Html
 resultsPerCalligrapher rp@ResultsPage{..} = do
-    H.p "Showing results for all calligraphers."
+    H.p $ fromString $ "Search results for '"
+                    ++ searchCharsToString queryChars
+                    ++ "'"
+    H.p $ "Showing results for all calligraphers."
 
     forM_ calligraphers $ \c ->
       when (shouldIncludeCalligrapher rp c) $ do
@@ -166,6 +165,9 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
 
 resultsPerCharacter :: ByCharacter -> Html
 resultsPerCharacter ByCharacter{..} = do
+    H.p $ fromString $ "Search results for '"
+                    ++ concatMap searchCharToString bcSearchChars
+                    ++ "'"
     H.p $ do
       fromString $ "Showing results for calligrapher "
                 ++ calligrapherNameToString bcPreferred ++ "."
@@ -204,7 +206,9 @@ resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
 resultsPreferredOnly ByCharacter{..} overlay = do
     forM_ (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
       case bcMatches Map.! sc of
-        [] -> fromString $ "(" ++ searchCharToString sc ++ ")"
+        []  ->
+          H.img ! A.src "/static/notfound.png"
+                ! A.class_ "mizige"
         (ch:_) -> do
           let bg = "background-image: url(\""
                 ++ fromString (charImg ch)
@@ -213,6 +217,7 @@ resultsPreferredOnly ByCharacter{..} overlay = do
                    ! A.class_ "mizige"
                    ! A.id (fromString ("canvas" ++ show i))
                    $ return ()
+
     H.script ! A.type_ "application/javascript" $ do
       fromString $ concat [
           "document.addEventListener('DOMContentLoaded', function() { "

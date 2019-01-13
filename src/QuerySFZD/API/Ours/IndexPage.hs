@@ -79,6 +79,16 @@ instance ToMarkup IndexPage where
                       ! A.type_ "checkbox"
               "Require all characters"
           H.tr $ do
+            H.td "Only preferred"
+            H.td $ do
+              forM_ [ ("", "No overlay")
+                    , ("mizige", "米字格")
+                    ] $ \(value, description) -> do
+                H.input ! A.name "preferredOnly"
+                        ! A.type_ "radio"
+                        ! A.value value
+                description
+          H.tr $ do
             H.td $ return ()
             H.td $ H.input ! A.type_ "submit"
     where

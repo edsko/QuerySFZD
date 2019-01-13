@@ -20,10 +20,16 @@ table.characters img {
   border: 1px solid #B8D9F4;
 }
 
+img.mizige {
+  width: 3.5cm;
+  height: 3.5cm;
+  opacity: 0.1;
+}
+
 canvas.mizige {
-  width: 200px;
-  height: 200px;
+  width: 3.5cm;
+  height: 3.5cm;
   background-position: center;
   background-size: 100% 100%;
-  border: black 1px solid;  
+  border: black 1px solid;
 }
