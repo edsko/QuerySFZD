@@ -68,7 +68,8 @@ instance ToMarkup IndexPage where
                       ! A.id "fallbacks"
               H.select ! A.onclick "addFallback(this.value);" $ do
                 H.option ! A.value "" $ fromString "Or add from list"
-                H.option ! A.value (fromString zhengkai') $ "正楷"
+                H.option ! A.value (flatten zhengkai) $ "正楷"
+                H.option ! A.value (flatten zhaoti)   $ "赵体"
                 forM_ knownCalligraphers $ \Calligrapher{..} ->
                   H.option ! A.value (fromString cSimplified) $
                     fromString $ cSimplified ++ " " ++ cPinyin
@@ -92,5 +93,5 @@ instance ToMarkup IndexPage where
             H.td $ return ()
             H.td $ H.input ! A.type_ "submit"
     where
-      zhengkai' :: String
-      zhengkai' = intercalate "," $ map cSimplified zhengkai
+      flatten :: [Calligrapher] -> AttributeValue
+      flatten = fromString . intercalate "," . map cSimplified

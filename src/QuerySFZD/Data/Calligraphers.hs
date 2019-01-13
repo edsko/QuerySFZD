@@ -7,6 +7,7 @@ module QuerySFZD.Data.Calligraphers (
     , knownCalligraphers
     , calligrapher
     , zhengkai
+    , zhaoti
       -- * Names
     , CalligrapherName(..)
     , findCalligrapher
@@ -22,7 +23,7 @@ import Servant
 data Calligrapher = Calligrapher {
       cSimplified  :: String
     , cTraditional :: Maybe String
-    , cAltSpelling :: [String]
+    , cAlts        :: [String]  -- ^ Alternative spellings, other names
     , cPinyin      :: String
     , cDates       :: String
     }
@@ -30,14 +31,76 @@ data Calligrapher = Calligrapher {
 
 knownCalligraphers :: [Calligrapher]
 knownCalligraphers = [
-      Calligrapher "王羲之" Nothing        []       "Wáng Xīzhī"     "303-361"
-    , Calligrapher "欧阳询" (Just "歐陽詢") []       "Ōuyáng Xún"     "557-641"
-    , Calligrapher "颜真卿" (Just "顏真卿") []       "Yán Zhēnqīng"   "709-785"
-    , Calligrapher "柳公权" (Just "柳公權") []       "Liǔ Gōngquán"   "778-865"
-    , Calligrapher "米芾"   Nothing        ["米黻"] "Mǐ Fú"          "1051–1107"
-    , Calligrapher "赵孟頫" (Just "趙孟頫") []       "Zhào Mèngfǔ"    "1254–1322"
-    , Calligrapher "田英章" Nothing        []       "Tián Yīngzhāng" "1950-"
-    , Calligrapher "田蕴章" (Just "田蘊章") []       "Tián Yùnzhāng"  "1945-"
+      Calligrapher {
+          cSimplified  = "王羲之"
+        , cTraditional = Nothing
+        , cAlts        = []
+        , cPinyin      = "Wáng Xīzhī"
+        , cDates       = "303-361"
+        }
+    , Calligrapher {
+          cSimplified  = "王献之"
+        , cTraditional = Just "王獻之"
+        , cAlts        = []
+        , cPinyin      = "Wáng Xiànzhī"
+        , cDates       = "344-386"
+        }
+    , Calligrapher {
+          cSimplified  = "欧阳询"
+        , cTraditional = Just "歐陽詢"
+        , cAlts        = []
+        , cPinyin      = "Ōuyáng Xún"
+        , cDates       = "557-641"
+        }
+    , Calligrapher {
+          cSimplified  = "颜真卿"
+        , cTraditional = Just "顏真卿"
+        , cAlts        = []
+        , cPinyin      = "Yán Zhēnqīng"
+        , cDates       = "709-785"
+        }
+    , Calligrapher {
+          cSimplified  = "柳公权"
+        , cTraditional = Just "柳公權"
+        , cAlts        = []
+        , cPinyin      = "Liǔ Gōngquán"
+        , cDates       = "778-865"
+        }
+    , Calligrapher {
+          cSimplified  = "米芾"
+        , cTraditional = Nothing
+        , cAlts        = ["米黻"]
+        , cPinyin      = "Mǐ Fú"
+        , cDates       = "1051–1107"
+        }
+    , Calligrapher {
+          cSimplified  = "赵构"
+        , cTraditional = Just "趙構"
+        , cAlts        = ["宋高宗"]
+        , cPinyin      = "Zhào Gòu"
+        , cDates       = "1107-1187"
+        }
+    , Calligrapher {
+          cSimplified  = "赵孟頫"
+        , cTraditional = Just "趙孟頫"
+        , cAlts        = []
+        , cPinyin      = "Zhào Mèngfǔ"
+        , cDates       = "1254–1322"
+        }
+    , Calligrapher {
+          cSimplified  = "田英章"
+        , cTraditional = Nothing
+        , cAlts        = []
+        , cPinyin      = "Tián Yīngzhāng"
+        , cDates       = "1950-"
+        }
+    , Calligrapher {
+          cSimplified  = "田蕴章"
+        , cTraditional = Just "田蘊章"
+        , cAlts        = []
+        , cPinyin      = "Tián Yùnzhāng"
+        , cDates       = "1945-"
+        }
     ]
 
 calligrapher :: String -> Calligrapher
@@ -54,6 +117,14 @@ zhengkai = [
     , calligrapher "田蕴章"
     , calligrapher "颜真卿"
     , calligrapher "柳公权"
+    ]
+
+-- | Possible substitutes for 赵体
+zhaoti :: [Calligrapher]
+zhaoti = [
+      calligrapher "赵孟頫"
+    , calligrapher "王羲之"
+    , calligrapher "赵构"
     ]
 
 {-------------------------------------------------------------------------------
@@ -80,7 +151,7 @@ findCalligrapher (CalligrapherName n) =
     matches Calligrapher{..} = or [
           cSimplified  == n
         , cTraditional == Just n
-        , n `elem` cAltSpelling
+        , n `elem` cAlts
         ]
 
 sameCalligrapher :: CalligrapherName -> CalligrapherName -> Bool
