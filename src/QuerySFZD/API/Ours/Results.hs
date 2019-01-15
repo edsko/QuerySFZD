@@ -204,11 +204,12 @@ resultsPerCharacter ByCharacter{..} = do
 
 resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
 resultsPreferredOnly ByCharacter{..} overlay = do
-    forM_ (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
+    calligraphers <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
       case bcMatches Map.! sc of
-        []  ->
+        []  -> do
           H.img ! A.src "/static/notfound.png"
                 ! A.class_ "mizige"
+          return Nothing
         (ch:_) -> do
           let bg = "background-image: url(\""
                 ++ fromString (charImg ch)
@@ -217,11 +218,19 @@ resultsPreferredOnly ByCharacter{..} overlay = do
                    ! A.class_ "mizige"
                    ! A.id (fromString ("canvas" ++ show i))
                    $ return ()
+          return $ Just (charCalligrapher ch)
+
+    let arr :: String
+        arr = "["
+           ++ intercalate ","
+                (map (maybe "null" (\c -> ['"'] ++ calligrapherNameToString c ++ ['"']))
+                     calligraphers)
+           ++ "]"
 
     H.script ! A.type_ "application/javascript" $ do
       fromString $ concat [
           "document.addEventListener('DOMContentLoaded', function() { "
-        , "  addOverlays(" ++ show (length bcSearchChars)
+        , "  addOverlays(" ++ arr
                    ++ ", " ++ show (preferredOverlay overlay)
                    ++ ");"
         , "}, false);"
