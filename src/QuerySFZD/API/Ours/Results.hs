@@ -256,7 +256,7 @@ byCharacter ResultsPage{..} c = ByCharacter {
         . indexInOrder
             ( (\ch -> sameCalligrapher c (charCalligrapher ch))
             : map (\fb ch -> sameCalligrapher fb (charCalligrapher ch))
-                  (fallbacks queryFallbacks)
+                  (filter (not . sameCalligrapher c) $ fallbacks queryFallbacks)
             )
         $ resultsChars Map.! sc
 
