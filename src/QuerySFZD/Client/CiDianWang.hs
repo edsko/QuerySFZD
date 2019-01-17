@@ -12,6 +12,7 @@ import Data.Char (isLetter)
 import Network.HTTP.Client (Manager)
 import Servant
 import Servant.Client hiding (baseUrl)
+import System.Random (randomRIO)
 
 import qualified Data.Map.Strict as Map
 
@@ -90,6 +91,7 @@ search mgr cache Query{..} =
 
     goChar' :: SearchChar -> ExceptT ServantError IO Results
     goChar' c = do
+        liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
         (first, next) <- ExceptT $ runClientM (rawSearch'  c) clientEnvSearch
         rest          <- ExceptT $ runClientM (goNext next c) clientEnvNext
         return $ first <> rest
@@ -97,7 +99,7 @@ search mgr cache Query{..} =
     goNext :: Maybe DynPath -> SearchChar -> ClientM Results
     goNext Nothing  _ = return mempty
     goNext (Just p) c = do
-        liftIO $ threadDelay 2_000_000 -- don't flood the server
+        liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
         (here, next) <- nextPage' p c
         rest         <- goNext next c
         return $ here <> rest

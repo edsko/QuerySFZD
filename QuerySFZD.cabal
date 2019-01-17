@@ -41,6 +41,7 @@ executable QuerySFZD
                      , filepath
                      , http-client
                      , mtl
+                     , random
                      , serialise
                      , servant
                      , servant-blaze
