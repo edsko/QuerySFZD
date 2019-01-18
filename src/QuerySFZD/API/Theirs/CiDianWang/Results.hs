@@ -47,8 +47,8 @@ parseCharacter
     : TagText ('出' : '自' : '：' : source)
     : leftover
     )
-  | Just _        <- find isBoxShow attrsImg
-  , Just (_, img) <- find (isAttr "src") attrsImg
+  | Just _   <- find isBoxShow attrsImg
+  , Just img <- findAttr "src" attrsImg
   = Just ( Character {
                charCalligrapher = CalligrapherName calligrapherName
              , charSource       = Just source
@@ -64,8 +64,8 @@ parseCharacter
     : TagClose "a"
     : leftover
     )
-  | Just _        <- find isBoxShow attrsImg
-  , Just (_, img) <- find (isAttr "src") attrsImg
+  | Just _   <- find isBoxShow attrsImg
+  , Just img <- findAttr "src" attrsImg
   = Just ( Character {
                charCalligrapher = CalligrapherName calligrapherName
              , charSource       = Nothing
@@ -82,7 +82,7 @@ parseNextPage
     : TagClose "a"
     : leftover
     )
-  | Just (_, nextPage) <- find (isAttr "href") attrsA
+  | Just nextPage <- findAttr "href" attrsA
   = Just (fromString nextPage, leftover)
 parseNextPage _otherwose = Nothing
 
@@ -93,6 +93,3 @@ parseNextPage _otherwose = Nothing
 isBoxShow :: Attribute String -> Bool
 isBoxShow ("onClick", val) = "box.Show()" `isPrefixOf` val
 isBoxShow _                = False
-
-isAttr :: String -> Attribute String -> Bool
-isAttr attr (attr', _) = attr == attr'

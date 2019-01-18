@@ -10,22 +10,27 @@
 module QuerySFZD.Util (
     -- * Lists
     partitionOn
-  , parseSoupWith
   , explode
+  , explode'
   , trim
   , indexInOrder
+    -- * Tagsoup
+  , findAttr
+  , parseSoupWith
     -- * Servant
   , DynPath(..)
   , dynPathToString
   ) where
 
 import Data.Char (isSpace)
+import Data.List (find, stripPrefix)
 import Data.Map.Strict (Map)
 import Data.String
 import Data.Text (Text)
 import Servant
 import Servant.Client
 import Servant.Client.Core.Internal.Request (appendToPath)
+import Text.HTML.TagSoup (Attribute)
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
@@ -44,16 +49,6 @@ partitionOn f = go Map.empty
         insert :: Maybe [a] -> Maybe [a]
         insert = Just . maybe [] (a:)
 
--- | Extract all matching sublists
---
--- Useful when parsing tagsoup
-parseSoupWith :: ([a] -> Maybe (b, [a])) -> [a] -> [b]
-parseSoupWith _ []     = []
-parseSoupWith f (x:xs) =
-    case f (x:xs) of
-      Just (b, leftover) -> b : parseSoupWith f leftover
-      Nothing            -> parseSoupWith f xs
-
 explode :: forall a. Eq a => a -> [a] -> [[a]]
 explode needle = go []
   where
@@ -62,6 +57,16 @@ explode needle = go []
     go acc (x:xs)
       | x == needle = reverse acc : go [] xs
       | otherwise   = go (x:acc) xs
+
+-- | Version of 'explode' where the needle is itself a list
+explode' :: forall a. Eq a => [a] -> [a] -> [[a]]
+explode' needle = go []
+  where
+    go :: [a] -> [a] -> [[a]]
+    go acc [] = [reverse acc]
+    go acc (x:xs)
+      | Just xs' <- stripPrefix needle (x:xs) = reverse acc : go [] xs'
+      | otherwise                             = go (x:acc) xs
 
 trim :: String -> String
 trim = ltrim . rtrim
@@ -73,6 +78,26 @@ trim = ltrim . rtrim
 indexInOrder :: [a -> Bool] -> [a] -> [a]
 indexInOrder []     _  = []
 indexInOrder (p:ps) xs = filter p xs ++ indexInOrder ps xs
+
+{-------------------------------------------------------------------------------
+  Tagsoup
+-------------------------------------------------------------------------------}
+
+findAttr :: String -> [Attribute String] -> Maybe String
+findAttr attr = fmap snd . find isAttr
+  where
+    isAttr :: Attribute String -> Bool
+    isAttr (attr', _) = attr == attr'
+
+-- | Extract all matching sublists
+--
+-- Useful when parsing tagsoup
+parseSoupWith :: ([a] -> Maybe (b, [a])) -> [a] -> [b]
+parseSoupWith _ []     = []
+parseSoupWith f (x:xs) =
+    case f (x:xs) of
+      Just (b, leftover) -> b : parseSoupWith f leftover
+      Nothing            -> parseSoupWith f xs
 
 {-------------------------------------------------------------------------------
   Servant

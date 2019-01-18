@@ -74,7 +74,7 @@ data Character = Character {
     , charCalligrapher :: CalligrapherName
     , charSource       :: Maybe String
     }
-  deriving stock    (Generic)
+  deriving stock    (Generic, Show)
   deriving anyclass Serialise
 
 -- | The raw tagsoup (for debugging/development)
