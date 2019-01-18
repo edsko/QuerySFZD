@@ -46,10 +46,16 @@ instance ToMarkup IndexPage where
           H.tr $ do
             H.td $ "Style"
             H.td $
-              forM_ [minBound .. maxBound] $ \s -> do
-                H.input ! A.name "style"
-                        ! A.type_ "radio"
-                        ! A.value (fromString (styleHttpApiData s))
+              forM_ radioOptions $ \(s, checked) -> do
+                if checked then
+                  H.input ! A.name "style"
+                          ! A.type_ "radio"
+                          ! A.value (fromString (styleHttpApiData s))
+                          ! A.checked "checked"
+                else
+                  H.input ! A.name "style"
+                          ! A.type_ "radio"
+                          ! A.value (fromString (styleHttpApiData s))
                 fromString (styleDescription s)
           H.tr $ do
             H.td $ "Calligrapher"
@@ -90,8 +96,27 @@ instance ToMarkup IndexPage where
                         ! A.value value
                 description
           H.tr $ do
+            H.td "Backend"
+            H.td $
+              forM_ radioOptions $ \(s, checked) -> do
+                if checked then
+                  H.input ! A.name "backend"
+                          ! A.type_ "radio"
+                          ! A.value (fromString (backendHttpApiData s))
+                          ! A.checked "checked"
+                else
+                  H.input ! A.name "backend"
+                          ! A.type_ "radio"
+                          ! A.value (fromString (backendHttpApiData s))
+                fromString (backendDescription s)
+                H.br
+          H.tr $ do
             H.td $ return ()
             H.td $ H.input ! A.type_ "submit"
     where
       flatten :: [Calligrapher] -> AttributeValue
       flatten = fromString . intercalate "," . map cSimplified
+
+      -- All options for a bunch of radio buttons
+      radioOptions :: (Enum a, Bounded a) => [(a, Bool)]
+      radioOptions = zip [minBound .. maxBound] (True : repeat False)

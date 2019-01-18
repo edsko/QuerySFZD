@@ -10,8 +10,11 @@ h1 {
   padding-right: 10px;
 }
 
-table.characters td {
+table td {
   vertical-align: top;
+}
+
+table.characters td {
   text-align: center;
 }
 

@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module QuerySFZD.API.Ours (
     API
@@ -21,7 +22,8 @@ type API = Get '[HTML] IndexPage
       :<|> "prefer" :> ReqBody '[PlainText] String :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
-type Search = QueryParam' '[Required] "characters"    SearchChars
+type Search = QueryParam' '[Required] "backend"       Backend
+           :> QueryParam' '[Required] "characters"    SearchChars
            :> QueryParam' '[Required] "style"         Style
            :> QueryParam' '[Required] "author"        CalligrapherName
            :> QueryParam' '[Required] "fallbacks"     Fallbacks

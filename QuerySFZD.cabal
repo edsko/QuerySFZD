@@ -28,6 +28,7 @@ executable QuerySFZD
                        QuerySFZD.Cache.Queries
                        QuerySFZD.Client
                        QuerySFZD.Client.CiDianWang
+                       QuerySFZD.Client.ShuFaZiDian
                        QuerySFZD.Data.Calligraphers
                        QuerySFZD.Server
                        QuerySFZD.Util

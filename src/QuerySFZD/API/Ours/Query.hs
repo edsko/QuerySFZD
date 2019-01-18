@@ -3,7 +3,12 @@
 {-# LANGUAGE OverloadedStrings          #-}
 
 module QuerySFZD.API.Ours.Query (
-    SearchChar(..)
+    -- * Backend
+    Backend(..)
+  , backendDescription
+  , backendHttpApiData
+    -- * Query proper
+  , SearchChar(..)
   , SearchChars(..)
   , searchCharToString
   , searchCharsToString
@@ -26,6 +31,33 @@ import qualified Data.Text as Text
 
 import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
+
+{-------------------------------------------------------------------------------
+  Backend
+-------------------------------------------------------------------------------}
+
+-- | Which backend to use?
+data Backend =
+    CiDianWang
+  | ShuFaZiDian
+  deriving (Bounded, Enum)
+
+backendDescription :: Backend -> String
+backendDescription CiDianWang  = "www.cidiangwang.com"
+backendDescription ShuFaZiDian = "www.shufazidian.com"
+
+backendHttpApiData :: Backend -> String
+backendHttpApiData CiDianWang  = "0"
+backendHttpApiData ShuFaZiDian = "1"
+
+instance FromHttpApiData Backend where
+  parseQueryParam "0" = Right $ CiDianWang
+  parseQueryParam "1" = Right $ ShuFaZiDian
+  parseQueryParam str = Left $ "unexpected backend " <> str
+
+{-------------------------------------------------------------------------------
+  Query proper
+-------------------------------------------------------------------------------}
 
 -- | Characters we're seaching for
 newtype SearchChar = SearchChar { searchChar :: Char }
