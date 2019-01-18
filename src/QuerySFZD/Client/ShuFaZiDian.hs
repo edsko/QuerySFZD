@@ -1,74 +1,99 @@
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE RecordWildCards    #-}
+
 module QuerySFZD.Client.ShuFaZiDian (
     search
   ) where
 
+import Control.Concurrent (threadDelay)
+import Control.Monad.Except
+import Data.Char (isLetter)
 import Network.HTTP.Client (Manager)
--- import Servant
-import Data.List (isPrefixOf)
 import Servant.Client hiding (baseUrl)
-import Text.HTML.TagSoup
+import System.Random (randomRIO)
 
 import qualified Data.Map.Strict as Map
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
+import QuerySFZD.API.Theirs.ShuFaZiDian
 import QuerySFZD.Cache
-import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
-{-
-TagOpen "a" [
-   ("rel","example_group")
-  ,("href","http://119.29.99.55/高清a/晋/晋a王献之a行书a患脓帖a13_2129.jpg")
-  ,("title","晋 · 王献之 · 患脓帖")
-  ]
+{-------------------------------------------------------------------------------
+  Raw client
+-------------------------------------------------------------------------------}
 
-ignore
+baseUrl :: BaseUrl
+baseUrl = BaseUrl {
+      baseUrlScheme = Http
+    , baseUrlHost   = "shufazidian.com"
+    , baseUrlPort   = 80
+    , baseUrlPath   = ""
+    }
 
- <img src="image/wxx.png" height="250">
- <img src="shufa6/1/22bc362022f797fe96aa186d109918920.jpg" style="width:120px;height:174px">
-<img src="shufa6/1/10d63bb3b64b92dfcdad3937b9906a119.jpg" style="width:120px;height:306px">
+rawSearch :: SfzdArgs -> ClientM SfzdResults
+rawSearch = client api
 
-don't ignore
-
- <img src="高清a/宋/1/宋a蔡襄a行书a扈从帖a58_1735.jpg" height="95">
--}
-
-parseCharacter :: [Tag String] -> Maybe (Character, [Tag String])
-parseCharacter
-    ( TagOpen "a" attrsA
-    : leftover
-    )
-  | Just "example_group" <- findAttr "rel"   attrsA
-  , Just href            <- findAttr "href"  attrsA
-  , Just title           <- findAttr "title" attrsA
-  , Just (name, src)     <- parseTitle title
-  = Just ( Character {
-             charCalligrapher = CalligrapherName name
-           , charSource       = src
-           , charImg          = if "http" `isPrefixOf` href
-                                  then href
-                                  else "http://shufazidian.com/" ++ href
-            }
-         , leftover
-         )
-  where
-    parseTitle :: String -> Maybe (String, Maybe String)
-    parseTitle title =
-        case explode' " · " title of
-          [_dynasty, name, source] -> Just (name, Just source)
-          [_dynasty, name]         -> Just (name, Nothing)
-          [name] | length name < 5 -> Just (name, Nothing)
-          _otherwise               -> Nothing
-
-parseCharacter _otherwise = Nothing
+{-------------------------------------------------------------------------------
+  Public API
+-------------------------------------------------------------------------------}
 
 search :: Manager
        -> Cache
        -> Query
        -> IO (Either ServantError Results)
-search _mgr _cache _query = do
-    raw <- readFile "/home/edsko/personal/doc/calligraphy/QuerySFZD/sfzd.html"
-    let soup  = parseTags raw
-        chars = parseSoupWith parseCharacter soup
-    return $ Right $ Results (Map.singleton (SearchChar '好') chars) (RawResult [("", parseTags raw)])
+search mgr cache Query{..} = do
+    runExceptT $ goChars queryChars
+  where
+    goChars :: SearchChars -> ExceptT ServantError IO Results
+    goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
+
+    goChar :: SearchChar -> ExceptT ServantError IO Results
+    goChar c | not (isLetter (searchChar c)) =
+        return Results {
+            resultsChars = Map.singleton c []
+          , resultsRaw   = RawResult []
+          }
+    goChar c = do
+        mCached <- liftIO $ getCachedChar cache queryStyle c
+        case mCached of
+          Just cs ->
+            return Results {
+                  resultsChars = Map.singleton c cs
+                , resultsRaw   = RawResult []
+                }
+          Nothing -> do
+            results <- goChar' c
+            liftIO $ cacheChar cache queryStyle c (resultsChars results Map.! c)
+            return results
+
+    goChar' :: SearchChar -> ExceptT ServantError IO Results
+    goChar' c = do
+        liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
+        ExceptT $ runClientM (rawSearch' c) clientEnv
+
+    rawSearch' :: SearchChar -> ClientM Results
+    rawSearch' c = fromSfzdResults Nothing c <$>
+        rawSearch SfzdArgs {
+            sfzdChar  = c
+          , sfzdStyle = queryStyle
+          }
+
+    fromSfzdResults :: Maybe DynPath
+                    -> SearchChar
+                    -> SfzdResults
+                    -> Results
+    fromSfzdResults mp c SfzdResults{..} =
+        Results {
+            resultsChars = Map.singleton c sfzdCharacters
+          , resultsRaw   = RawResult [(header, sfzdRaw)]
+          }
+      where
+        header :: String
+        header = case mp of
+                   Nothing -> "search '" ++ [searchChar c] ++ "'"
+                   Just p  -> dynPathToString p
+
+    clientEnv :: ClientEnv
+    clientEnv = mkClientEnv mgr baseUrl

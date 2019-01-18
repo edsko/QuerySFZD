@@ -6,7 +6,7 @@ module QuerySFZD.Client.CiDianWang (
     search
   ) where
 
-import Control.Concurrent
+import Control.Concurrent (threadDelay)
 import Control.Monad.Except
 import Data.Char (isLetter)
 import Network.HTTP.Client (Manager)

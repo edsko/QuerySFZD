@@ -8,8 +8,8 @@
 module QuerySFZD.API.Theirs.CiDianWang (
     API
   , api
-  , CDW(..)
     -- * CDW specific types
+  , CDW(..)
   , CdwQuery(..)
   , CdwReferer(..)
   , module Export
@@ -27,7 +27,7 @@ import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
-  Raw API
+  API
 -------------------------------------------------------------------------------}
 
 -- | CDW search API

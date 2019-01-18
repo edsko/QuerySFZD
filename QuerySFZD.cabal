@@ -23,6 +23,8 @@ executable QuerySFZD
                        QuerySFZD.API.Ours.Template
                        QuerySFZD.API.Theirs.CiDianWang
                        QuerySFZD.API.Theirs.CiDianWang.Results
+                       QuerySFZD.API.Theirs.ShuFaZiDian
+                       QuerySFZD.API.Theirs.ShuFaZiDian.Results
                        QuerySFZD.Cache
                        QuerySFZD.Cache.Preferences
                        QuerySFZD.Cache.Queries
@@ -40,6 +42,7 @@ executable QuerySFZD
                      , containers
                      , directory
                      , filepath
+                     , http-api-data
                      , http-client
                      , mtl
                      , random
@@ -51,6 +54,7 @@ executable QuerySFZD
                      , servant-server
                      , tagsoup
                      , text
+                     , unordered-containers
                      , utf8-string
                      , warp
   hs-source-dirs:      src
