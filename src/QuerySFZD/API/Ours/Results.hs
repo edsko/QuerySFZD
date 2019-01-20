@@ -101,13 +101,18 @@ shouldIncludeCalligrapher ResultsPage{..} c
     wrote sc = any (sameCalligrapher c . charCalligrapher) (resultsChars Map.! sc)
 
 instance ToMarkup ResultsPage where
-  toMarkup rp@ResultsPage{..} = template $ do
+  toMarkup rp@ResultsPage{..} = do
       case (queryCalligrapher, rpPreferredOnly) of
-        (Nothing, _)           -> resultsPerCalligrapher rp
-        (Just c, Nothing)      -> resultsPerCharacter  (byCharacter rp c)
-        (Just c, Just overlay) -> resultsPreferredOnly (byCharacter rp c) overlay
-
-      renderRawResult resultsRaw
+        (Nothing, _) ->
+          template True $ do
+            resultsPerCalligrapher rp
+            renderRawResult resultsRaw
+        (Just c, Nothing) ->
+          template True $
+            resultsPerCharacter  (byCharacter rp c)
+        (Just c, Just overlay) ->
+          template False $
+            resultsPreferredOnly (byCharacter rp c) overlay
     where
       Query{queryCalligrapher} = rpQuery
       Results{resultsRaw} = rpResults

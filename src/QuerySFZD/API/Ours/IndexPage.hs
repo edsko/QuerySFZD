@@ -23,7 +23,7 @@ import qualified QuerySFZD.Cache.Queries as Queries
 data IndexPage = IndexPage Queries
 
 instance ToMarkup IndexPage where
-  toMarkup (IndexPage history) = template $ do
+  toMarkup (IndexPage history) = template True $ do
       -- TODO: This manual path (@search@) should be avoided.
       H.form ! A.action "search" $ do
         H.table $ do
