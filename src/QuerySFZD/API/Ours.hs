@@ -15,11 +15,12 @@ import Servant.HTML.Blaze
 import QuerySFZD.API.Ours.IndexPage as Export
 import QuerySFZD.API.Ours.Query as Export
 import QuerySFZD.API.Ours.Results as Export
+import QuerySFZD.Cache.Preferences (Prefer)
 import QuerySFZD.Data.Calligraphers
 
 type API = Get '[HTML] IndexPage
       :<|> "search" :> Search
-      :<|> "prefer" :> ReqBody '[PlainText] String :> Post '[HTML] NoContent
+      :<|> "prefer" :> ReqBody '[JSON] Prefer :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
 type Search = QueryParam' '[Required] "backend"       Backend

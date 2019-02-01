@@ -20,7 +20,7 @@ import System.FilePath
 
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Ours.Results
-import QuerySFZD.Cache.Preferences (Preferences)
+import QuerySFZD.Cache.Preferences (Prefer, Preferences)
 import QuerySFZD.Cache.Queries (Queries)
 
 import qualified QuerySFZD.Cache.Preferences as Preferences
@@ -69,7 +69,7 @@ getCachedChar cache style c = do
   where
     path = mkPath cache style c
 
-cachePreference :: Cache -> String -> IO ()
+cachePreference :: Cache -> Prefer -> IO ()
 cachePreference cache url = do
     -- TODO: Potential race condition here
     ps <- getCachedPreferences cache

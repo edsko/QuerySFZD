@@ -36,9 +36,9 @@ executable QuerySFZD
                        QuerySFZD.Util
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
+                     , aeson
                      , blaze-html
                      , blaze-markup
-                     , bytestring
                      , containers
                      , directory
                      , filepath
@@ -50,6 +50,7 @@ executable QuerySFZD
                      , servant
                      , servant-blaze
                      , servant-client
+                     -- TODO: remove:
                      , servant-client-core
                      , servant-server
                      , tagsoup

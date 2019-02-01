@@ -14,6 +14,7 @@ import Servant.Client
 
 import QuerySFZD.API.Ours
 import QuerySFZD.Cache
+import QuerySFZD.Cache.Preferences (Prefer)
 import QuerySFZD.Client
 import QuerySFZD.Data.Calligraphers
 
@@ -61,7 +62,7 @@ query mgr cache backend sc style author fs skip save only = do
     renderErr :: ServantError -> String
     renderErr err = "backend error: " ++ show err
 
-prefer :: Cache -> String -> Handler NoContent
+prefer :: Cache -> Prefer -> Handler NoContent
 prefer cache url = do
     liftIO $ cachePreference cache url
     return NoContent

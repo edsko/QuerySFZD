@@ -8,7 +8,8 @@ function prefer(url) {
      }
   }
   xhttp.open("POST", "/prefer", true);
-  xhttp.send(url);
+  xhttp.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+  xhttp.send(JSON.stringify({"url": url}));
 }
 
 function selectAuthor(author) {
