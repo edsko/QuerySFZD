@@ -209,21 +209,33 @@ resultsPerCharacter ByCharacter{..} = do
 
 resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
 resultsPreferredOnly ByCharacter{..} overlay = do
+    H.textarea $ return ()
+    H.br
+
     calligraphers <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
-      case bcMatches Map.! sc of
-        []  -> do
-          H.img ! A.src "/static/notfound.png"
-                ! A.class_ "mizige"
-          return Nothing
-        (ch:_) -> do
-          let bg = "background-image: url(\""
-                ++ fromString (charImg ch)
-                ++ "\")"
-          H.canvas ! A.style (fromString bg)
-                   ! A.class_ "mizige"
-                   ! A.id (fromString ("canvas" ++ show i))
-                   $ return ()
-          return $ Just (charCalligrapher ch)
+        case bcMatches Map.! sc of
+          []  -> do
+            H.div ! A.style "float: left;" $ do
+              H.input ! A.class_ "mizigeHeader"
+                      ! A.value (fromString (searchCharToString sc))
+              H.br
+              H.img ! A.src "/static/notfound.png"
+                    ! A.class_ "mizige"
+            return Nothing
+          (ch:_) -> do
+            let bg   = "background-image: url(\""
+                    ++ fromString (charImg ch)
+                    ++ "\")"
+                name = fromString $ calligrapherNameToString (charCalligrapher ch)
+            H.div ! A.style "float: left;" $ do
+              H.input ! A.class_ "mizigeHeader"
+                      ! A.value name
+              H.br
+              H.canvas ! A.style (fromString bg)
+                       ! A.class_ "mizige"
+                       ! A.id (fromString ("canvas" ++ show i))
+                       $ return ()
+            return $ Just (charCalligrapher ch)
 
     let arr :: String
         arr = "["

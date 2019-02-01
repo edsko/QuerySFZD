@@ -41,16 +41,16 @@ function addOverlays(calligraphers, overlay) {
   for(calligrapher of calligraphers) {
     if(calligrapher != null) {
       var canvas = document.getElementById("canvas" + i);
-      addOverlay(canvas, calligrapher, overlay);
+      addOverlay(canvas, overlay);
     }
     i++;
   }
 }
 
-function addOverlay(canvas, calligrapher, overlay) {
+function addOverlay(canvas, overlay) {
   switch(overlay) {
     case "mizige":
-      addMizige(canvas, calligrapher);
+      addMizige(canvas);
       break;
     case "":
       break;
@@ -60,13 +60,10 @@ function addOverlay(canvas, calligrapher, overlay) {
   }
 }
 
-function addMizige(canvas, calligrapher) {
+function addMizige(canvas) {
   var ctx    = canvas.getContext("2d");
   var width  = canvas.width;
   var height = canvas.height;
-
-  ctx.font = "15px sans-serif";
-  ctx.fillText(calligrapher, 5, 15);
 
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#0000ff90";

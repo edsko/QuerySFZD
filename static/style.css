@@ -23,10 +23,15 @@ table.characters img {
   border: 1px solid #B8D9F4;
 }
 
+input.mizigeHeader {
+  width: 3.5cm;
+}
+
 img.mizige {
   width: 3.5cm;
   height: 3.5cm;
   opacity: 0.1;
+  border: black 1px solid;
 }
 
 canvas.mizige {
