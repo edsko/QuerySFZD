@@ -122,9 +122,9 @@ zhengkai = [
       calligrapher "田英章" -- modern interpretation of 欧楷
     , calligrapher "田蕴章"
     , calligrapher "欧阳询"
+    , calligrapher "翁闿运" -- another modern calligrapher with a standard script
     , calligrapher "颜真卿"
     , calligrapher "柳公权"
-    , calligrapher "翁闿运" -- another modern calligrapher with a standard script
     ]
 
 -- | Possible substitutes for 赵体
