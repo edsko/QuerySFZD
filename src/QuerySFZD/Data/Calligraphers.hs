@@ -101,6 +101,13 @@ knownCalligraphers = [
         , cPinyin      = "Tián Yùnzhāng"
         , cDates       = "1945-"
         }
+    , Calligrapher {
+          cSimplified  = "翁闿运"
+        , cTraditional = Just "翁闓運"
+        , cAlts        = []
+        , cPinyin      = "Wēng Kǎiyùn"
+        , cDates       = "1912-2006"
+        }
     ]
 
 calligrapher :: String -> Calligrapher
@@ -112,11 +119,12 @@ calligrapher simplified =
 
 zhengkai :: [Calligrapher]
 zhengkai = [
-      calligrapher "欧阳询"
-    , calligrapher "田英章" -- modern interpretation of 欧楷
+      calligrapher "田英章" -- modern interpretation of 欧楷
     , calligrapher "田蕴章"
+    , calligrapher "欧阳询"
     , calligrapher "颜真卿"
     , calligrapher "柳公权"
+    , calligrapher "翁闿运" -- another modern calligrapher with a standard script
     ]
 
 -- | Possible substitutes for 赵体
