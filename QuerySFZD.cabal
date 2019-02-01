@@ -48,7 +48,7 @@ executable QuerySFZD
                      , random
                      , serialise
                      , servant
-                     , servant-blaze
+                     , servant-blaze >=0.9
                      , servant-client
                      -- TODO: remove:
                      , servant-client-core
