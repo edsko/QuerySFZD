@@ -7,8 +7,8 @@ import Network.HTTP.Client (Manager)
 import Servant.Client
 
 import QuerySFZD.API.Ours.Query
-import QuerySFZD.API.Ours.Results
 import QuerySFZD.Cache
+import QuerySFZD.Client.Common
 
 import qualified QuerySFZD.Client.CiDianWang as CDW
 import qualified QuerySFZD.Client.ShuFaZiDian as SFZD

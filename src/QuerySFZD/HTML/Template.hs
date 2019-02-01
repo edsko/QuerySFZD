@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module QuerySFZD.API.Ours.Template (
+module QuerySFZD.HTML.Template (
     template
   ) where
 

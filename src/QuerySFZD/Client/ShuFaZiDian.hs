@@ -15,10 +15,9 @@ import System.Random (randomRIO)
 import qualified Data.Map.Strict as Map
 
 import QuerySFZD.API.Ours.Query
-import QuerySFZD.API.Ours.Results
 import QuerySFZD.API.Theirs.ShuFaZiDian
 import QuerySFZD.Cache
-import QuerySFZD.Util
+import QuerySFZD.Client.Common
 
 {-------------------------------------------------------------------------------
   Raw client
@@ -44,7 +43,7 @@ search :: Manager
        -> Query
        -> IO (Either ServantError Results)
 search mgr cache Query{..} = do
-    runExceptT $ goChars queryChars
+    runExceptT $ goChars querySearchChars
   where
     goChars :: SearchChars -> ExceptT ServantError IO Results
     goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs

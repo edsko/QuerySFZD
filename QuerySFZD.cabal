@@ -17,21 +17,23 @@ extra-source-files:  CHANGELOG.md
 executable QuerySFZD
   main-is:             Main.hs
   other-modules:       QuerySFZD.API.Ours
-                       QuerySFZD.API.Ours.IndexPage
                        QuerySFZD.API.Ours.Query
-                       QuerySFZD.API.Ours.Results
-                       QuerySFZD.API.Ours.Template
                        QuerySFZD.API.Theirs.CiDianWang
                        QuerySFZD.API.Theirs.CiDianWang.Results
+                       QuerySFZD.API.Theirs.Common
                        QuerySFZD.API.Theirs.ShuFaZiDian
                        QuerySFZD.API.Theirs.ShuFaZiDian.Results
                        QuerySFZD.Cache
                        QuerySFZD.Cache.Preferences
                        QuerySFZD.Cache.Queries
                        QuerySFZD.Client
+                       QuerySFZD.Client.Common
                        QuerySFZD.Client.CiDianWang
                        QuerySFZD.Client.ShuFaZiDian
                        QuerySFZD.Data.Calligraphers
+                       QuerySFZD.HTML.Index
+                       QuerySFZD.HTML.Results
+                       QuerySFZD.HTML.Template
                        QuerySFZD.Server
                        QuerySFZD.Util
   -- other-extensions:

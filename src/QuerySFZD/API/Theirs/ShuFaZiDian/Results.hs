@@ -11,7 +11,7 @@ import Text.HTML.TagSoup
 
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
 
-import QuerySFZD.API.Ours.Results
+import QuerySFZD.API.Theirs.Common
 import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 

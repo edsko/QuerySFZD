@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE TypeApplications #-}
 
 module QuerySFZD.Server (
@@ -17,6 +18,9 @@ import QuerySFZD.Cache
 import QuerySFZD.Cache.Preferences (Prefer)
 import QuerySFZD.Client
 import QuerySFZD.Data.Calligraphers
+import QuerySFZD.HTML.Index
+import QuerySFZD.HTML.Results
+import QuerySFZD.Util
 
 server :: Manager -> Cache -> Server API
 server mgr cache =
@@ -25,10 +29,10 @@ server mgr cache =
     :<|> prefer cache
     :<|> serveDirectoryWebApp "static"
 
-presentIndexPage :: Cache -> Handler IndexPage
+presentIndexPage :: Cache -> Handler (HtmlPage "index")
 presentIndexPage cache = do
     queries <- liftIO $ getCachedQueries cache
-    return $ IndexPage queries
+    return $ renderIndex queries
 
 query :: Manager
       -> Cache
@@ -40,23 +44,27 @@ query :: Manager
       -> Maybe SkipNotFound
       -> Maybe SaveQuery
       -> Maybe PreferredOnly
-      -> Handler ResultsPage
+      -> Handler (HtmlPage "results")
 query mgr cache backend sc style author fs skip save only = do
     liftIO $ when (isJust save) $ cacheQuery cache sc
     mRes <- liftIO $ search backend mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
     case mRes of
-      Right r -> return $ ResultsPage qry r ps skip only
+      Right r -> return $ renderResults $ ResultsPage qry r ps skip only
       Left  e -> throwError $ err501 { errBody = fromString (renderErr e) }
   where
     qry :: Query
     qry = Query {
-          queryChars        = sc
-        , queryStyle        = style
-        , queryCalligrapher = if null (calligrapherNameToString author)
-                               then Nothing
-                               else Just author
-        , queryFallbacks    = fs
+          queryBackend          = backend
+        , querySearchChars      = sc
+        , queryStyle            = style
+        , queryCalligrapherName = if null (calligrapherNameToString author)
+                                    then Nothing
+                                    else Just author
+        , queryFallbacks        = fs
+        , querySkipNotFound     = skip
+        , querySaveQuery        = save
+        , queryPreferredOnly    = only
         }
 
     renderErr :: ServantError -> String

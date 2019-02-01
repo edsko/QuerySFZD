@@ -1,31 +1,24 @@
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NamedFieldPuns             #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE NamedFieldPuns      #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
-module QuerySFZD.API.Ours.Results (
-    Results(..)
-  , nubResults
-  , Character(..)
-  , RawResult(..)
-  , ResultsPage(..)
+module QuerySFZD.HTML.Results (
+    ResultsPage(..)
+  , renderResults
   ) where
 
-import Codec.Serialise
 import Control.Monad
 import Data.Char (isLetter)
 import Data.Foldable (forM_)
-import Data.Function (on)
-import Data.List (intercalate, nubBy)
+import Data.List (intercalate)
 import Data.Map.Strict (Map)
 import Data.Maybe (isJust)
 import Data.String (fromString)
-import GHC.Generics (Generic)
+import Data.Text (Text)
+import Servant
 import Text.Blaze hiding (Tag)
 import Text.Blaze.Html5 (Html)
 import Text.HTML.TagSoup (Tag)
@@ -34,52 +27,19 @@ import qualified Data.Map.Strict as Map
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-import QuerySFZD.API.Ours.Query
-import QuerySFZD.API.Ours.Template
+import QuerySFZD.API.Ours
+import QuerySFZD.API.Theirs.Common
 import QuerySFZD.Cache.Preferences (Preferences)
+import QuerySFZD.Client.Common
 import QuerySFZD.Data.Calligraphers
+import QuerySFZD.HTML.Template
 import QuerySFZD.Util
 
 import qualified QuerySFZD.Cache.Preferences as Preferences
 
-data Results = Results {
-      resultsChars :: Map SearchChar [Character]
-    , resultsRaw   :: RawResult
-    }
-
-instance Semigroup Results where
-  a <> b = Results {
-               resultsChars = combineUsing (Map.unionWith (<>)) resultsChars
-             , resultsRaw   = combineUsing (<>)                 resultsRaw
-             }
-    where
-      combineUsing :: (a -> a -> a) -> (Results -> a) -> a
-      combineUsing op f = f a `op` f b
-
-instance Monoid Results where
-  mempty = Results {
-               resultsChars = mempty
-             , resultsRaw   = mempty
-             }
-
-nubResults :: Results -> Results
-nubResults Results{..} = Results {
-      resultsChars = nubBy ((==) `on` charImg) <$> resultsChars
-    , resultsRaw   = resultsRaw
-    }
-
--- | Returned characters
-data Character = Character {
-      charImg          :: String
-    , charCalligrapher :: CalligrapherName
-    , charSource       :: Maybe String
-    }
-  deriving stock    (Generic, Show)
-  deriving anyclass Serialise
-
--- | The raw tagsoup (for debugging/development)
-newtype RawResult = RawResult [(String, [Tag String])]
-  deriving newtype (Semigroup, Monoid)
+{-------------------------------------------------------------------------------
+  Record results
+-------------------------------------------------------------------------------}
 
 data ResultsPage = ResultsPage {
       rpQuery         :: Query
@@ -92,7 +52,7 @@ data ResultsPage = ResultsPage {
 shouldIncludeCalligrapher :: ResultsPage -> CalligrapherName -> Bool
 shouldIncludeCalligrapher ResultsPage{..} c
   | not skipNotFound = True
-  | otherwise        = all wrote (searchCharsToList (queryChars rpQuery))
+  | otherwise        = all wrote (searchCharsToList (querySearchChars rpQuery))
   where
     skipNotFound = isJust rpSkipNotFound
     Results{..}  = rpResults
@@ -100,22 +60,26 @@ shouldIncludeCalligrapher ResultsPage{..} c
     wrote :: SearchChar -> Bool
     wrote sc = any (sameCalligrapher c . charCalligrapher) (resultsChars Map.! sc)
 
-instance ToMarkup ResultsPage where
-  toMarkup rp@ResultsPage{..} = do
-      case (queryCalligrapher, rpPreferredOnly) of
-        (Nothing, _) ->
-          template True $ do
-            resultsPerCalligrapher rp
-            renderRawResult resultsRaw
-        (Just c, Nothing) ->
-          template True $
-            resultsPerCharacter  (byCharacter rp c)
-        (Just c, Just overlay) ->
-          template False $
-            resultsPreferredOnly (byCharacter rp c) overlay
-    where
-      Query{queryCalligrapher} = rpQuery
-      Results{resultsRaw} = rpResults
+{-------------------------------------------------------------------------------
+  Top-level rendering
+-------------------------------------------------------------------------------}
+
+renderResults :: ResultsPage -> HtmlPage "results"
+renderResults rp@ResultsPage{..} = HtmlPage $ do
+    case (queryCalligrapherName, rpPreferredOnly) of
+      (Nothing, _) ->
+        template True $ do
+          resultsPerCalligrapher rp
+          renderRawResult resultsRaw
+      (Just c, Nothing) ->
+        template True $
+          resultsPerCharacter rpQuery (byCharacter rp c)
+      (Just c, Just overlay) ->
+        template False $
+          resultsPreferredOnly (byCharacter rp c) overlay
+  where
+    Query{queryCalligrapherName} = rpQuery
+    Results{resultsRaw} = rpResults
 
 {-------------------------------------------------------------------------------
   Default results page: show per calligrapher
@@ -124,7 +88,7 @@ instance ToMarkup ResultsPage where
 resultsPerCalligrapher :: ResultsPage -> Html
 resultsPerCalligrapher rp@ResultsPage{..} = do
     H.p $ fromString $ "Search results for '"
-                    ++ searchCharsToString queryChars
+                    ++ searchCharsToString querySearchChars
                     ++ "'"
     H.p $ "Showing results for all calligraphers."
 
@@ -134,10 +98,10 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
 
         H.table ! A.class_ "characters" $ do
           H.tr $
-            forM_ (searchCharsToList queryChars) $ \sc ->
+            forM_ (searchCharsToList querySearchChars) $ \sc ->
               H.th $ fromString [searchChar sc]
           H.tr $
-            forM_ (searchCharsToList queryChars) $ \sc -> do
+            forM_ (searchCharsToList querySearchChars) $ \sc -> do
               let matchesAuthor :: Character -> Bool
                   matchesAuthor ch = sameCalligrapher c (charCalligrapher ch)
 
@@ -155,7 +119,7 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
                     Just src -> fromString $ "(" ++ src ++ ")"
                   H.br
   where
-    Query{queryChars} = rpQuery
+    Query{querySearchChars} = rpQuery
     Results{resultsChars} = rpResults
 
     flat :: [Character]
@@ -168,40 +132,45 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
   Characters on the horizontal axis, all possibilities on the vertical
 -------------------------------------------------------------------------------}
 
-resultsPerCharacter :: ByCharacter -> Html
-resultsPerCharacter ByCharacter{..} = do
-    H.p $ fromString $ "Search results for '"
-                    ++ concatMap searchCharToString bcSearchChars
-                    ++ "'"
+resultsPerCharacter :: Query -> ByCharacter -> Html
+resultsPerCharacter qry ByCharacter{..} = do
     H.p $ do
+      fromString $ "Search results for '"
+                ++ concatMap searchCharToString bcSearchChars
+                ++ "'"
+      H.br
       fromString $ "Showing results for calligrapher "
                 ++ calligrapherNameToString bcPreferred ++ "."
       H.br
       if null bcFallbacks
         then "No fallbacks."
         else fromString $ "Fallbacks: " ++ renderFallbacks bcFallbacks ++ "."
-
-      H.table ! A.class_ "characters" $ do
-        H.tr $
-          forM_ bcSearchChars $ \sc ->
-            H.th $ fromString (searchCharToString sc)
-        H.tr $
-          forM_ bcSearchChars $ \sc -> do
-            let matching = bcMatches Map.! sc
-            H.td $ do
-              when (null matching && isLetter (searchChar sc)) $ do
-                H.img ! A.src "/static/notfound.png"
-              forM_ matching $ \ch -> do
-                H.img ! A.src (fromString (charImg ch))
-                      ! A.onclick (fromString ("prefer(\"" ++ charImg ch ++ "\");"))
-                H.br
-                fromString $ calligrapherNameToString (charCalligrapher ch)
-                forM_ (charSource ch) $ \src ->
-                  fromString $ " (" ++ src ++ ")"
-                H.br
+      H.br
+      H.a ! A.href (fromText urlOverlay) $ "Add overlay"
+    H.table ! A.class_ "characters" $ do
+      H.tr $
+        forM_ bcSearchChars $ \sc ->
+          H.th $ fromString (searchCharToString sc)
+      H.tr $
+        forM_ bcSearchChars $ \sc -> do
+          let matching = bcMatches Map.! sc
+          H.td $ do
+            when (null matching && isLetter (searchChar sc)) $ do
+              H.img ! A.src "/static/notfound.png"
+            forM_ matching $ \ch -> do
+              H.img ! A.src (fromString (charImg ch))
+                    ! A.onclick (fromString ("prefer(\"" ++ charImg ch ++ "\");"))
+              H.br
+              fromString $ calligrapherNameToString (charCalligrapher ch)
+              forM_ (charSource ch) $ \src ->
+                fromString $ " (" ++ src ++ ")"
+              H.br
   where
     renderFallbacks :: [CalligrapherName] -> String
     renderFallbacks = intercalate ", " . map calligrapherNameToString
+
+    urlOverlay :: Text
+    urlOverlay = renderQuery qry { queryPreferredOnly = Just OverlayMiZiGe }
 
 {-------------------------------------------------------------------------------
   Rendering page
@@ -248,7 +217,7 @@ resultsPreferredOnly ByCharacter{..} overlay = do
       fromString $ concat [
           "document.addEventListener('DOMContentLoaded', function() { "
         , "  addOverlays(" ++ arr
-                   ++ ", " ++ show (preferredOverlay overlay)
+                   ++ ", " ++ show (toQueryParam overlay)
                    ++ ");"
         , "}, false);"
         ]
@@ -268,12 +237,12 @@ byCharacter :: ResultsPage -> CalligrapherName -> ByCharacter
 byCharacter ResultsPage{..} c = ByCharacter {
       bcPreferred   = c
     , bcFallbacks   = fallbacks queryFallbacks
-    , bcSearchChars = searchCharsToList queryChars
+    , bcSearchChars = searchCharsToList querySearchChars
     , bcMatches     = Map.fromList $ map (\sc -> (sc, orderedMatches sc)) $
-                        searchCharsToList queryChars
+                        searchCharsToList querySearchChars
     }
   where
-    Query{queryFallbacks, queryChars} = rpQuery
+    Query{queryFallbacks, querySearchChars} = rpQuery
     Results{resultsChars} = rpResults
 
     orderedMatches :: SearchChar -> [Character]

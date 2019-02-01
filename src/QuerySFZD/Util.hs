@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -8,8 +9,10 @@
 {-# LANGUAGE TypeOperators              #-}
 
 module QuerySFZD.Util (
+    -- * Misc
+    fromText
     -- * Lists
-    partitionOn
+  , partitionOn
   , explode
   , explode'
   , trim
@@ -17,14 +20,29 @@ module QuerySFZD.Util (
     -- * Tagsoup
   , findAttr
   , parseSoupWith
+    -- * Servant
+  , HtmlPage(..)
   ) where
 
 import Data.Char (isSpace)
 import Data.List (find, stripPrefix)
 import Data.Map.Strict (Map)
+import Data.String (IsString (..))
+import Data.Text (Text)
+import GHC.TypeLits (Symbol)
+import Text.Blaze (ToMarkup (..))
+import Text.Blaze.Html5 (Html)
 import Text.HTML.TagSoup (Attribute)
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Text as Text
+
+{-------------------------------------------------------------------------------
+  Misc
+-------------------------------------------------------------------------------}
+
+fromText :: IsString a => Text -> a
+fromText = fromString . Text.unpack
 
 {-------------------------------------------------------------------------------
   Lists
@@ -89,3 +107,12 @@ parseSoupWith f (x:xs) =
     case f (x:xs) of
       Just (b, leftover) -> b : parseSoupWith f leftover
       Nothing            -> parseSoupWith f xs
+
+{-------------------------------------------------------------------------------
+  Servant
+-------------------------------------------------------------------------------}
+
+newtype HtmlPage (name :: Symbol) = HtmlPage { htmlPage :: Html }
+
+instance ToMarkup (HtmlPage name) where
+  toMarkup = htmlPage

@@ -19,7 +19,7 @@ import System.Directory
 import System.FilePath
 
 import QuerySFZD.API.Ours.Query
-import QuerySFZD.API.Ours.Results
+import QuerySFZD.API.Theirs.Common
 import QuerySFZD.Cache.Preferences (Prefer, Preferences)
 import QuerySFZD.Cache.Queries (Queries)
 

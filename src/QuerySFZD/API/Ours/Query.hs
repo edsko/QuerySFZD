@@ -6,7 +6,6 @@ module QuerySFZD.API.Ours.Query (
     -- * Backend
     Backend(..)
   , backendDescription
-  , backendHttpApiData
     -- * Query proper
   , SearchChar(..)
   , SearchChars(..)
@@ -14,17 +13,17 @@ module QuerySFZD.API.Ours.Query (
   , searchCharsToString
   , Style(..)
   , styleDescription
-  , styleHttpApiData
   , Fallbacks(..)
   , SkipNotFound(..)
   , SaveQuery(..)
   , PreferredOnly(..)
-  , preferredOverlay
   , Query(..)
   ) where
 
 import Codec.Serialise
 import Data.Coerce (coerce)
+import Data.List (intersperse)
+import Data.String
 import Servant
 
 import qualified Data.Text as Text
@@ -40,20 +39,20 @@ import QuerySFZD.Util
 data Backend =
     CiDianWang
   | ShuFaZiDian
-  deriving (Bounded, Enum)
+  deriving (Show, Bounded, Enum)
 
 backendDescription :: Backend -> String
 backendDescription CiDianWang  = "www.cidiangwang.com"
 backendDescription ShuFaZiDian = "www.shufazidian.com"
 
-backendHttpApiData :: Backend -> String
-backendHttpApiData CiDianWang  = "0"
-backendHttpApiData ShuFaZiDian = "1"
-
 instance FromHttpApiData Backend where
   parseQueryParam "0" = Right $ CiDianWang
   parseQueryParam "1" = Right $ ShuFaZiDian
   parseQueryParam str = Left $ "unexpected backend " <> str
+
+instance ToHttpApiData Backend where
+  toQueryParam CiDianWang  = "0"
+  toQueryParam ShuFaZiDian = "1"
 
 {-------------------------------------------------------------------------------
   Query proper
@@ -73,11 +72,21 @@ searchCharToString (SearchChar c) = [c]
 newtype SearchChars = SearchChars { searchCharsToList :: [SearchChar] }
   deriving newtype (Eq, Semigroup, Monoid, Show, Serialise)
 
+instance IsString SearchChars where
+  fromString = coerce
+
 searchCharsToString :: SearchChars -> String
 searchCharsToString = coerce
 
 instance FromHttpApiData SearchChars where
-  parseQueryParam = Right . SearchChars . map SearchChar . Text.unpack
+  parseQueryParam = Right . fromText
+
+instance ToHttpApiData SearchChars where
+  toQueryParam = Text.pack . searchCharsToString
+
+{-------------------------------------------------------------------------------
+  Style
+-------------------------------------------------------------------------------}
 
 data Style =
     Regular     -- ^ 楷书
@@ -96,14 +105,6 @@ styleDescription Clerical    = "隶书"
 styleDescription Seal        = "篆书"
 styleDescription Small       = "小楷"
 
-styleHttpApiData :: Style -> String
-styleHttpApiData Regular     = "0"
-styleHttpApiData SemiCursive = "1"
-styleHttpApiData Cursive     = "2"
-styleHttpApiData Clerical    = "3"
-styleHttpApiData Seal        = "4"
-styleHttpApiData Small       = "5"
-
 instance FromHttpApiData Style where
   parseQueryParam "0" = Right Regular
   parseQueryParam "1" = Right SemiCursive
@@ -113,45 +114,21 @@ instance FromHttpApiData Style where
   parseQueryParam "5" = Right Small
   parseQueryParam p   = Left $ "Could not parse style '" <> p <> "'"
 
-data Query = Query {
-      queryChars        :: SearchChars
-    , queryStyle        :: Style
-    , queryCalligrapher :: Maybe CalligrapherName
-    , queryFallbacks    :: Fallbacks
-    }
-  deriving (Show)
+instance ToHttpApiData Style where
+  toQueryParam Regular     = "0"
+  toQueryParam SemiCursive = "1"
+  toQueryParam Cursive     = "2"
+  toQueryParam Clerical    = "3"
+  toQueryParam Seal        = "4"
+  toQueryParam Small       = "5"
+
+{-------------------------------------------------------------------------------
+  Fallbacks
+-------------------------------------------------------------------------------}
 
 -- | Fallbacks
 newtype Fallbacks = Fallbacks { fallbacks :: [CalligrapherName] }
   deriving newtype (Show)
-
--- | Skip entries for authors with not-found characters
-data SkipNotFound = SkipNotFound
-
--- | Save this query to the history
-data SaveQuery = SaveQuery
-
--- | Only show the preferred characters
---
--- We specify which overlay we want
-data PreferredOnly =
-    OverlayNone
-  | OverlayMiZiGe
-
-preferredOverlay :: PreferredOnly -> String
-preferredOverlay OverlayNone   = ""
-preferredOverlay OverlayMiZiGe = "mizige"
-
-instance FromHttpApiData SkipNotFound where
-  parseQueryParam = const (Right SkipNotFound)
-
-instance FromHttpApiData SaveQuery where
-  parseQueryParam = const (Right SaveQuery)
-
-instance FromHttpApiData PreferredOnly where
-  parseQueryParam ""       = Right OverlayNone
-  parseQueryParam "mizige" = Right OverlayMiZiGe
-  parseQueryParam str      = Left ("Invalid overlay " <> str)
 
 instance FromHttpApiData Fallbacks where
   parseQueryParam = Right
@@ -161,3 +138,69 @@ instance FromHttpApiData Fallbacks where
                   . map trim
                   . explode ','
                   . Text.unpack
+
+instance ToHttpApiData Fallbacks where
+  toQueryParam (Fallbacks cs) = Text.pack . mconcat $
+      intersperse "," (map calligrapherNameToString cs)
+
+{-------------------------------------------------------------------------------
+  Boolean arguments
+-------------------------------------------------------------------------------}
+
+-- | Skip entries for authors with not-found characters
+data SkipNotFound = SkipNotFound
+  deriving (Show)
+
+-- | Save this query to the history
+data SaveQuery = SaveQuery
+  deriving (Show)
+
+instance FromHttpApiData SkipNotFound where
+  parseQueryParam = const (Right SkipNotFound)
+
+instance FromHttpApiData SaveQuery where
+  parseQueryParam = const (Right SaveQuery)
+
+instance ToHttpApiData SkipNotFound where
+  toQueryParam SkipNotFound = "on"
+
+instance ToHttpApiData SaveQuery where
+  toQueryParam SaveQuery = "on"
+
+{-------------------------------------------------------------------------------
+  Only show preferred characters
+-------------------------------------------------------------------------------}
+
+-- | Only show the preferred characters
+--
+-- We specify which overlay we want
+data PreferredOnly =
+    OverlayNone
+  | OverlayMiZiGe
+  deriving (Show)
+
+instance FromHttpApiData PreferredOnly where
+  parseQueryParam ""       = Right OverlayNone
+  parseQueryParam "mizige" = Right OverlayMiZiGe
+  parseQueryParam str      = Left ("Invalid overlay " <> str)
+
+instance ToHttpApiData PreferredOnly where
+  toQueryParam OverlayNone   = ""
+  toQueryParam OverlayMiZiGe = "mizige"
+
+{-------------------------------------------------------------------------------
+  Query
+-------------------------------------------------------------------------------}
+
+-- | Summary of all query parameters
+data Query = Query {
+      queryBackend          :: Backend
+    , querySearchChars      :: SearchChars
+    , queryStyle            :: Style
+    , queryCalligrapherName :: Maybe CalligrapherName
+    , queryFallbacks        :: Fallbacks
+    , querySkipNotFound     :: Maybe SkipNotFound
+    , querySaveQuery        :: Maybe SaveQuery
+    , queryPreferredOnly    :: Maybe PreferredOnly
+    }
+  deriving (Show)

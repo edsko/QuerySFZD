@@ -143,7 +143,7 @@ zhaoti = [
 --
 -- This intentionally does not have an 'Eq' instance. See 'sameCalligrapher'.
 newtype CalligrapherName = CalligrapherName { calligrapherNameToString :: String }
-  deriving newtype (Show, Serialise, FromHttpApiData)
+  deriving newtype (Show, Serialise, FromHttpApiData, ToHttpApiData)
 
 -- | Find information about a certain calligrapher
 --
