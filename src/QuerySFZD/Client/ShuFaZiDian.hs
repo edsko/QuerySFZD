@@ -74,26 +74,23 @@ search mgr cache Query{..} = do
         ExceptT $ runClientM (rawSearch' c) clientEnv
 
     rawSearch' :: SearchChar -> ClientM Results
-    rawSearch' c = fromSfzdResults Nothing c <$>
+    rawSearch' c = fromSfzdResults c <$>
         rawSearch SfzdArgs {
             sfzdChar  = c
           , sfzdStyle = queryStyle
           }
 
-    fromSfzdResults :: Maybe DynPath
-                    -> SearchChar
+    fromSfzdResults :: SearchChar
                     -> SfzdResults
                     -> Results
-    fromSfzdResults mp c SfzdResults{..} =
+    fromSfzdResults c SfzdResults{..} =
         Results {
             resultsChars = Map.singleton c sfzdCharacters
           , resultsRaw   = RawResult [(header, sfzdRaw)]
           }
       where
         header :: String
-        header = case mp of
-                   Nothing -> "search '" ++ [searchChar c] ++ "'"
-                   Just p  -> dynPathToString p
+        header = "search '" ++ [searchChar c] ++ "'"
 
     clientEnv :: ClientEnv
     clientEnv = mkClientEnv mgr baseUrl

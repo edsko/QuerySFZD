@@ -17,23 +17,14 @@ module QuerySFZD.Util (
     -- * Tagsoup
   , findAttr
   , parseSoupWith
-    -- * Servant
-  , DynPath(..)
-  , dynPathToString
   ) where
 
 import Data.Char (isSpace)
 import Data.List (find, stripPrefix)
 import Data.Map.Strict (Map)
-import Data.String
-import Data.Text (Text)
-import Servant
-import Servant.Client
-import Servant.Client.Core.Internal.Request (appendToPath)
 import Text.HTML.TagSoup (Attribute)
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Text as Text
 
 {-------------------------------------------------------------------------------
   Lists
@@ -98,26 +89,3 @@ parseSoupWith f (x:xs) =
     case f (x:xs) of
       Just (b, leftover) -> b : parseSoupWith f leftover
       Nothing            -> parseSoupWith f xs
-
-{-------------------------------------------------------------------------------
-  Servant
-
-  TODO: Do these already exist in servant-client somewhere? Should we submit
-  a patc?
--------------------------------------------------------------------------------}
-
--- | Dynamic part of the path
-newtype DynPath = DynPath Text
-  deriving newtype IsString
-
-dynPathToString :: DynPath -> String
-dynPathToString (DynPath t) = Text.unpack t
-
-instance HasClient m api => HasClient m (DynPath :> api) where
-  type Client m (DynPath :> api) = DynPath -> Client m api
-
-  clientWithRoute pm Proxy req (DynPath p) =
-      clientWithRoute pm (Proxy @api) (appendToPath p req)
-
-  hoistClientMonad pm _ f cl p =
-      hoistClientMonad pm (Proxy @api) f (cl p)

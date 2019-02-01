@@ -50,8 +50,6 @@ executable QuerySFZD
                      , servant
                      , servant-blaze >=0.9
                      , servant-client
-                     -- TODO: remove:
-                     , servant-client-core
                      , servant-server
                      , tagsoup
                      , text

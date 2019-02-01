@@ -24,7 +24,6 @@ import qualified Data.Text as Text
 import QuerySFZD.API.Ours.Query
 import QuerySFZD.API.Theirs.CiDianWang.Results as Export
 import QuerySFZD.Data.Calligraphers
-import QuerySFZD.Util
 
 {-------------------------------------------------------------------------------
   API
@@ -44,7 +43,7 @@ type Search = QueryParam' '[Required] "m" CdwQuery
            :> Get '[HTML] CdwResults
 
 -- | Get specific results page
-type NextPage = DynPath :> Get '[HTML] CdwResults
+type NextPage = Capture "next" CdwNext :> Get '[HTML] CdwResults
 
 api :: Proxy API
 api = Proxy

@@ -1,27 +1,43 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 module QuerySFZD.API.Theirs.CiDianWang.Results (
     CdwResults(..)
+  , CdwNext(..)
+  , cdwNextToString
+  , cdwNextFromString
   ) where
 
 import Data.List (find, isPrefixOf)
 import Data.Maybe (listToMaybe)
-import Data.String
-import Servant.API.ContentTypes
+import Data.Text (Text)
+import Servant
 import Servant.HTML.Blaze
 import Text.HTML.TagSoup
 
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
+import qualified Data.Text as Text
 
 import QuerySFZD.API.Ours.Results
 import QuerySFZD.Data.Calligraphers
 import QuerySFZD.Util
 
+-- | cidianwang.com splits results up into separate pages
+newtype CdwNext = CdwNext { cdwNextToText :: Text }
+  deriving newtype (ToHttpApiData)
+
+cdwNextToString :: CdwNext -> String
+cdwNextToString = Text.unpack . cdwNextToText
+
+cdwNextFromString :: String -> CdwNext
+cdwNextFromString = CdwNext . Text.pack
+
 data CdwResults = CdwResults {
       cdwCharacters :: [Character]
-    , cdwNextPage   :: Maybe DynPath
+    , cdwNextPage   :: Maybe CdwNext
     , cdwRaw        :: [Tag String]
     }
 
@@ -75,7 +91,7 @@ parseCharacter
          )
 parseCharacter _otherwise = Nothing
 
-parseNextPage :: [Tag String] -> Maybe (DynPath, [Tag String])
+parseNextPage :: [Tag String] -> Maybe (CdwNext, [Tag String])
 parseNextPage
     ( TagOpen "a" attrsA
     : TagText "下一页"
@@ -83,7 +99,7 @@ parseNextPage
     : leftover
     )
   | Just nextPage <- findAttr "href" attrsA
-  = Just (fromString nextPage, leftover)
+  = Just (cdwNextFromString nextPage, leftover)
 parseNextPage _otherwose = Nothing
 
 {-------------------------------------------------------------------------------

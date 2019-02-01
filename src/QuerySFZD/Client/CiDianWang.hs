@@ -52,7 +52,7 @@ rawSearch :: CdwQuery
           -> Maybe CdwReferer
           -> ClientM CdwResults
 
-nextPage :: DynPath -> ClientM CdwResults
+nextPage :: CdwNext -> ClientM CdwResults
 
 (rawSearch :<|> nextPage) = client api
 
@@ -96,7 +96,7 @@ search mgr cache Query{..} =
         rest          <- ExceptT $ runClientM (goNext next c) clientEnvNext
         return $ first <> rest
 
-    goNext :: Maybe DynPath -> SearchChar -> ClientM Results
+    goNext :: Maybe CdwNext -> SearchChar -> ClientM Results
     goNext Nothing  _ = return mempty
     goNext (Just p) c = do
         liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
@@ -104,7 +104,7 @@ search mgr cache Query{..} =
         rest         <- goNext next c
         return $ here <> rest
 
-    rawSearch' :: SearchChar -> ClientM (Results, Maybe DynPath)
+    rawSearch' :: SearchChar -> ClientM (Results, Maybe CdwNext)
     rawSearch' c = fromCdwResults Nothing c <$>
         rawSearch
           CdwCalligraphy
@@ -113,13 +113,13 @@ search mgr cache Query{..} =
           (CDW queryStyle)
           (Just CdwRefererSelf)
 
-    nextPage' :: DynPath -> SearchChar -> ClientM (Results, Maybe DynPath)
+    nextPage' :: CdwNext -> SearchChar -> ClientM (Results, Maybe CdwNext)
     nextPage' p c = fromCdwResults (Just p) c <$> nextPage p
 
-    fromCdwResults :: Maybe DynPath
+    fromCdwResults :: Maybe CdwNext
                    -> SearchChar
                    -> CdwResults
-                   -> (Results, Maybe DynPath)
+                   -> (Results, Maybe CdwNext)
     fromCdwResults mp c CdwResults{..} = (
           Results {
               resultsChars = Map.singleton c cdwCharacters
@@ -131,7 +131,7 @@ search mgr cache Query{..} =
         header :: String
         header = case mp of
                    Nothing -> "search '" ++ [searchChar c] ++ "'"
-                   Just p  -> dynPathToString p
+                   Just p  -> cdwNextToString p
 
     clientEnvSearch, clientEnvNext :: ClientEnv
     clientEnvSearch = mkClientEnv mgr baseUrlSearch
