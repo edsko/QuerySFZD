@@ -94,7 +94,9 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
 
     forM_ calligraphers $ \c ->
       when (shouldIncludeCalligrapher rp c) $ do
-        H.h2 $ fromString $ "Calligrapher: " ++ calligrapherNameToString c
+        H.h2 $ do
+          fromString $ "Calligrapher: " ++ calligrapherNameToString c ++ " "
+          H.a ! A.href (fromText (urlOverlay c)) $ "(add overlay)"
 
         H.table ! A.class_ "characters" $ do
           H.tr $
@@ -119,7 +121,7 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
                     Just src -> fromString $ "(" ++ src ++ ")"
                   H.br
   where
-    Query{querySearchChars} = rpQuery
+    qry@Query{querySearchChars} = rpQuery
     Results{resultsChars} = rpResults
 
     flat :: [Character]
@@ -127,6 +129,12 @@ resultsPerCalligrapher rp@ResultsPage{..} = do
 
     calligraphers :: [CalligrapherName]
     calligraphers = nubCalligrapherNames $ map charCalligrapher flat
+
+    urlOverlay :: CalligrapherName -> Text
+    urlOverlay name = renderQuery qry {
+          queryCalligrapherName = Just name
+        , queryPreferredOnly    = Just OverlayMiZiGe
+        }
 
 {-------------------------------------------------------------------------------
   Characters on the horizontal axis, all possibilities on the vertical
