@@ -115,6 +115,13 @@ knownCalligraphers = [
         , cPinyin      = "Jìng shìjiāng"
         , cDates       = "Unknown (modern day)"
         }
+    , Calligrapher {
+          cSimplified  = "胡问遂"
+        , cTraditional = Just "胡問遂"
+        , cAlts        = []
+        , cPinyin      = "Hú Wènsuì"
+        , cDates       = "1918-1999"
+        }
     ]
 
 calligrapher :: String -> Calligrapher
