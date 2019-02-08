@@ -14,6 +14,7 @@ module QuerySFZD.Util (
     -- * Lists
   , partitionOn
   , explode
+  , explodeText
   , explode'
   , trim
   , indexInOrder
@@ -66,6 +67,10 @@ explode needle = go []
     go acc (x:xs)
       | x == needle = reverse acc : go [] xs
       | otherwise   = go (x:acc) xs
+
+-- | Variation on 'explode' for 'Text'
+explodeText :: Char -> Text -> [Text]
+explodeText needle = map Text.pack . explode needle . Text.unpack
 
 -- | Version of 'explode' where the needle is itself a list
 explode' :: forall a. Eq a => [a] -> [a] -> [[a]]

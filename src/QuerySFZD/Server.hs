@@ -38,14 +38,14 @@ query :: Manager
       -> Cache
       -> Backend
       -> SearchChars
-      -> Style
+      -> [Style]
       -> CalligrapherName
       -> Fallbacks
       -> Maybe SkipNotFound
       -> Maybe SaveQuery
       -> Maybe PreferredOnly
       -> Handler (HtmlPage "results")
-query mgr cache backend sc style author fs skip save only = do
+query mgr cache backend sc styles author fs skip save only = do
     liftIO $ when (isJust save) $ cacheQuery cache sc
     mRes <- liftIO $ search backend mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
@@ -57,7 +57,7 @@ query mgr cache backend sc style author fs skip save only = do
     qry = Query {
           queryBackend          = backend
         , querySearchChars      = sc
-        , queryStyle            = style
+        , queryStyles           = styles
         , queryCalligrapherName = if null (calligrapherNameToString author)
                                     then Nothing
                                     else Just author

@@ -45,15 +45,15 @@ renderIndex history = HtmlPage $ template True $ do
         H.tr $ do
           H.td $ "Style"
           H.td $
-            forM_ radioOptions $ \(s, checked) -> do
+            forM_ enumerate $ \(s, checked) -> do
               if checked then
                 H.input ! A.name "style"
-                        ! A.type_ "radio"
+                        ! A.type_ "checkbox"
                         ! A.value (fromText (toQueryParam s))
                         ! A.checked "checked"
               else
                 H.input ! A.name "style"
-                        ! A.type_ "radio"
+                        ! A.type_ "checkbox"
                         ! A.value (fromText (toQueryParam s))
               fromString (styleDescription s)
         H.tr $ do
@@ -97,7 +97,7 @@ renderIndex history = HtmlPage $ template True $ do
         H.tr $ do
           H.td "Backend"
           H.td $
-            forM_ radioOptions $ \(s, checked) -> do
+            forM_ enumerate $ \(s, checked) -> do
               if checked then
                 H.input ! A.name "backend"
                         ! A.type_ "radio"
@@ -116,6 +116,6 @@ renderIndex history = HtmlPage $ template True $ do
     flatten :: [Calligrapher] -> AttributeValue
     flatten = fromString . intercalate "," . map cSimplified
 
-    -- All options for a bunch of radio buttons
-    radioOptions :: (Enum a, Bounded a) => [(a, Bool)]
-    radioOptions = zip [minBound .. maxBound] (True : repeat False)
+    -- All options with the first marked as such
+    enumerate :: (Enum a, Bounded a) => [(a, Bool)]
+    enumerate = zip [minBound .. maxBound] (True : repeat False)

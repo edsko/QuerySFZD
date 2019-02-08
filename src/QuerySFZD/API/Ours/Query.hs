@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
@@ -196,7 +197,7 @@ instance ToHttpApiData PreferredOnly where
 data Query = Query {
       queryBackend          :: Backend
     , querySearchChars      :: SearchChars
-    , queryStyle            :: Style
+    , queryStyles           :: [Style]
     , queryCalligrapherName :: Maybe CalligrapherName
     , queryFallbacks        :: Fallbacks
     , querySkipNotFound     :: Maybe SkipNotFound

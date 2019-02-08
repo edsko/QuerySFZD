@@ -64,19 +64,24 @@ search :: Manager
        -> Query
        -> IO (Either ServantError Results)
 search mgr cache Query{..} =
-    runExceptT $ goChars querySearchChars
+    runExceptT $ goStyles queryStyles
   where
-    goChars :: SearchChars -> ExceptT ServantError IO Results
-    goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
+    goStyles :: [Style] -> ExceptT ServantError IO Results
+    goStyles styles = mconcat <$>
+        mapM (\style -> goChars style querySearchChars) styles
 
-    goChar :: SearchChar -> ExceptT ServantError IO Results
-    goChar c | not (isLetter (searchChar c)) =
+    goChars :: Style -> SearchChars -> ExceptT ServantError IO Results
+    goChars style (SearchChars cs) = nubResults . mconcat <$>
+        mapM (goChar style) cs
+
+    goChar :: Style -> SearchChar -> ExceptT ServantError IO Results
+    goChar _style c | not (isLetter (searchChar c)) =
         return Results {
             resultsChars = Map.singleton c []
           , resultsRaw   = RawResult []
           }
-    goChar c = do
-        mCached <- liftIO $ getCachedChar cache queryStyle c
+    goChar style c = do
+        mCached <- liftIO $ getCachedChar cache style c
         case mCached of
           Just cs ->
             return Results {
@@ -84,15 +89,15 @@ search mgr cache Query{..} =
                 , resultsRaw   = RawResult []
                 }
           Nothing -> do
-            results <- goChar' c
-            liftIO $ cacheChar cache queryStyle c (resultsChars results Map.! c)
+            results <- goChar' style c
+            liftIO $ cacheChar cache style c (resultsChars results Map.! c)
             return results
 
-    goChar' :: SearchChar -> ExceptT ServantError IO Results
-    goChar' c = do
+    goChar' :: Style -> SearchChar -> ExceptT ServantError IO Results
+    goChar' style c = do
         liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
-        (first, next) <- ExceptT $ runClientM (rawSearch'  c) clientEnvSearch
-        rest          <- ExceptT $ runClientM (goNext next c) clientEnvNext
+        (first, next) <- ExceptT $ runClientM (rawSearch' style c) clientEnvSearch
+        rest          <- ExceptT $ runClientM (goNext     next  c) clientEnvNext
         return $ first <> rest
 
     goNext :: Maybe CdwNext -> SearchChar -> ClientM Results
@@ -103,13 +108,13 @@ search mgr cache Query{..} =
         rest         <- goNext next c
         return $ here <> rest
 
-    rawSearch' :: SearchChar -> ClientM (Results, Maybe CdwNext)
-    rawSearch' c = fromCdwResults Nothing c <$>
+    rawSearch' :: Style -> SearchChar -> ClientM (Results, Maybe CdwNext)
+    rawSearch' style c = fromCdwResults Nothing c <$>
         rawSearch
           CdwCalligraphy
           (CDW c)
           (CDW (CalligrapherName ""))
-          (CDW queryStyle)
+          (CDW style)
           (Just CdwRefererSelf)
 
     nextPage' :: CdwNext -> SearchChar -> ClientM (Results, Maybe CdwNext)

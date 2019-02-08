@@ -28,7 +28,7 @@ type API = Get '[HTML] (HtmlPage "index")
 
 type Search = QueryParam' '[Required] "backend"       Backend
            :> QueryParam' '[Required] "characters"    SearchChars
-           :> QueryParam' '[Required] "style"         Style
+           :> QueryParams             "style"         Style
            :> QueryParam' '[Required] "author"        CalligrapherName
            :> QueryParam' '[Required] "fallbacks"     Fallbacks
            :> QueryParam' '[Optional] "skipNotFound"  SkipNotFound
@@ -47,7 +47,7 @@ renderQuery Query{..} = toUrlPiece $
     safeLink api (Proxy :: Proxy ("search" :> Search))
       queryBackend
       querySearchChars
-      queryStyle
+      queryStyles
       (fromMaybe (CalligrapherName "") queryCalligrapherName)
       queryFallbacks
       querySkipNotFound

@@ -43,19 +43,24 @@ search :: Manager
        -> Query
        -> IO (Either ServantError Results)
 search mgr cache Query{..} = do
-    runExceptT $ goChars querySearchChars
+    runExceptT $ goStyles queryStyles
   where
-    goChars :: SearchChars -> ExceptT ServantError IO Results
-    goChars (SearchChars cs) = nubResults . mconcat <$> mapM goChar cs
+    goStyles :: [Style] -> ExceptT ServantError IO Results
+    goStyles styles = mconcat <$>
+        mapM (\style -> goChars style querySearchChars) styles
 
-    goChar :: SearchChar -> ExceptT ServantError IO Results
-    goChar c | not (isLetter (searchChar c)) =
+    goChars :: Style -> SearchChars -> ExceptT ServantError IO Results
+    goChars style (SearchChars cs) = nubResults . mconcat <$>
+        mapM (goChar style) cs
+
+    goChar :: Style -> SearchChar -> ExceptT ServantError IO Results
+    goChar _style c | not (isLetter (searchChar c)) =
         return Results {
             resultsChars = Map.singleton c []
           , resultsRaw   = RawResult []
           }
-    goChar c = do
-        mCached <- liftIO $ getCachedChar cache queryStyle c
+    goChar style c = do
+        mCached <- liftIO $ getCachedChar cache style c
         case mCached of
           Just cs ->
             return Results {
@@ -63,20 +68,20 @@ search mgr cache Query{..} = do
                 , resultsRaw   = RawResult []
                 }
           Nothing -> do
-            results <- goChar' c
-            liftIO $ cacheChar cache queryStyle c (resultsChars results Map.! c)
+            results <- goChar' style c
+            liftIO $ cacheChar cache style c (resultsChars results Map.! c)
             return results
 
-    goChar' :: SearchChar -> ExceptT ServantError IO Results
-    goChar' c = do
+    goChar' :: Style -> SearchChar -> ExceptT ServantError IO Results
+    goChar' style c = do
         liftIO $ randomRIO (1_000_000, 5_000_000) >>= threadDelay
-        ExceptT $ runClientM (rawSearch' c) clientEnv
+        ExceptT $ runClientM (rawSearch' style c) clientEnv
 
-    rawSearch' :: SearchChar -> ClientM Results
-    rawSearch' c = fromSfzdResults c <$>
+    rawSearch' :: Style -> SearchChar -> ClientM Results
+    rawSearch' style c = fromSfzdResults c <$>
         rawSearch SfzdArgs {
             sfzdChar  = c
-          , sfzdStyle = queryStyle
+          , sfzdStyle = style
           }
 
     fromSfzdResults :: SearchChar
