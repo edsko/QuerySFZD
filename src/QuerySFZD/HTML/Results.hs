@@ -189,7 +189,7 @@ resultsPreferredOnly ByCharacter{..} overlay = do
     H.textarea $ return ()
     H.br
 
-    calligraphers <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
+    imgs <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
         case bcMatches Map.! sc of
           []  -> do
             H.div ! A.style "float: left;" $ do
@@ -200,25 +200,20 @@ resultsPreferredOnly ByCharacter{..} overlay = do
                     ! A.class_ "mizige"
             return Nothing
           (ch:_) -> do
-            let bg   = "background-image: url(\""
-                    ++ fromString (charImg ch)
-                    ++ "\")"
-                name = fromString $ calligrapherNameToString (charCalligrapher ch)
+            let name = fromString $ calligrapherNameToString (charCalligrapher ch)
             H.div ! A.style "float: left;" $ do
               H.input ! A.class_ "mizigeHeader"
                       ! A.value name
               H.br
-              H.canvas ! A.style (fromString bg)
-                       ! A.class_ "mizige"
+              H.canvas ! A.class_ "mizige"
                        ! A.id (fromString ("canvas" ++ show i))
                        $ return ()
-            return $ Just (charCalligrapher ch)
+            return $ Just (charImg ch)
 
     let arr :: String
         arr = "["
            ++ intercalate ","
-                (map (maybe "null" (\c -> ['"'] ++ calligrapherNameToString c ++ ['"']))
-                     calligraphers)
+                (map (maybe "null" (\img -> ['"'] ++ img ++ ['"'])) imgs)
            ++ "]"
 
     H.script ! A.type_ "application/javascript" $ do

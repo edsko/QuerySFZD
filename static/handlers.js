@@ -34,23 +34,26 @@ function useQuery(query) {
   document.getElementById("query").value = query;
 }
 
-function addOverlays(calligraphers, overlay) {
-  console.log("Adding overlays..", calligraphers, overlay);
+function addOverlays(urls, overlay) {
+  console.log("Adding overlays..", urls, overlay);
 
   var i = 1;
-  for(calligrapher of calligraphers) {
-    if(calligrapher != null) {
-      var canvas = document.getElementById("canvas" + i);
-      addOverlay(canvas, overlay);
+  for(url of urls) {
+    if(url != null) {
+      let canvas = document.getElementById("canvas" + i);
+      let img    = new Image();
+
+      img.onload = function() { addOverlay(canvas, img, overlay); };
+      img.src    = url;
     }
     i++;
   }
 }
 
-function addOverlay(canvas, overlay) {
+function addOverlay(canvas, url, overlay) {
   switch(overlay) {
     case "mizige":
-      addMizige(canvas);
+      addMizige(canvas, url);
       break;
     case "":
       break;
@@ -60,10 +63,21 @@ function addOverlay(canvas, overlay) {
   }
 }
 
-function addMizige(canvas) {
+function addMizige(canvas, img) {
   var ctx    = canvas.getContext("2d");
   var width  = canvas.width;
   var height = canvas.height;
+  var rotate = false;
+
+  if(rotate) {
+    ctx.save();
+    ctx.translate(0.5 * width, 0.5 * height);
+    ctx.rotate(-0.5 * Math.PI);
+    ctx.drawImage(img, -0.5 * height, -0.5 * width, height, width);
+    ctx.restore();
+  } else {
+    ctx.drawImage(img, 0, 0, width, height);
+  }
 
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#0000ff90";

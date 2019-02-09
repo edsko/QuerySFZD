@@ -37,7 +37,8 @@ img.mizige {
 canvas.mizige {
   width: 3.5cm;
   height: 3.5cm;
-  background-position: center;
+/*  background-position: center;
   background-size: 100% 100%;
+*/  
   border: black 1px solid;
 }
