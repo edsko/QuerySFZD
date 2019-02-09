@@ -188,42 +188,42 @@ resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
 resultsPreferredOnly ByCharacter{..} overlay = do
     H.textarea $ return ()
     H.br
+    H.div ! A.id "scroll" $ do
+      imgs <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
+          case bcMatches Map.! sc of
+            []  -> do
+              H.div ! A.style "float: left;" $ do
+                H.input ! A.class_ "mizigeHeader"
+                        ! A.value (fromString (searchCharToString sc))
+                H.br
+                H.img ! A.src "/static/notfound.png"
+                      ! A.class_ "mizige"
+              return Nothing
+            (ch:_) -> do
+              let name = fromString $ calligrapherNameToString (charCalligrapher ch)
+              H.div ! A.style "float: left;" $ do
+                H.input ! A.class_ "mizigeHeader"
+                        ! A.value name
+                H.br
+                H.canvas ! A.class_ "mizige"
+                         ! A.id (fromString ("canvas" ++ show i))
+                         $ return ()
+              return $ Just (charImg ch)
 
-    imgs <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
-        case bcMatches Map.! sc of
-          []  -> do
-            H.div ! A.style "float: left;" $ do
-              H.input ! A.class_ "mizigeHeader"
-                      ! A.value (fromString (searchCharToString sc))
-              H.br
-              H.img ! A.src "/static/notfound.png"
-                    ! A.class_ "mizige"
-            return Nothing
-          (ch:_) -> do
-            let name = fromString $ calligrapherNameToString (charCalligrapher ch)
-            H.div ! A.style "float: left;" $ do
-              H.input ! A.class_ "mizigeHeader"
-                      ! A.value name
-              H.br
-              H.canvas ! A.class_ "mizige"
-                       ! A.id (fromString ("canvas" ++ show i))
-                       $ return ()
-            return $ Just (charImg ch)
+      let arr :: String
+          arr = "["
+             ++ intercalate ","
+                  (map (maybe "null" (\img -> ['"'] ++ img ++ ['"'])) imgs)
+             ++ "]"
 
-    let arr :: String
-        arr = "["
-           ++ intercalate ","
-                (map (maybe "null" (\img -> ['"'] ++ img ++ ['"'])) imgs)
-           ++ "]"
-
-    H.script ! A.type_ "application/javascript" $ do
-      fromString $ concat [
-          "document.addEventListener('DOMContentLoaded', function() { "
-        , "  addOverlays(" ++ arr
-                   ++ ", " ++ show (toQueryParam overlay)
-                   ++ ");"
-        , "}, false);"
-        ]
+      H.script ! A.type_ "application/javascript" $ do
+        fromString $ concat [
+            "document.addEventListener('DOMContentLoaded', function() { "
+          , "  addOverlays(" ++ arr
+                     ++ ", " ++ show (toQueryParam overlay)
+                     ++ ");"
+          , "}, false);"
+          ]
 
 {-------------------------------------------------------------------------------
   Organize results by character

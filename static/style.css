@@ -23,22 +23,39 @@ table.characters img {
   border: 1px solid #B8D9F4;
 }
 
+/*
+ * mizige: not rotated
+ */
+
 input.mizigeHeader {
   width: 3.5cm;
-}
-
-img.mizige {
-  width: 3.5cm;
-  height: 3.5cm;
-  opacity: 0.1;
-  border: black 1px solid;
 }
 
 canvas.mizige {
   width: 3.5cm;
   height: 3.5cm;
-/*  background-position: center;
-  background-size: 100% 100%;
-*/  
   border: black 1px solid;
 }
+
+div#scroll {
+}
+
+/*
+ * mizige: rotated
+ */
+
+/*
+input.mizigeHeader {
+  display: none;
+}
+
+canvas.mizige {
+  width: 8.5cm;
+  height: 8.5cm;
+  border: black 1px solid;
+}
+
+div#scroll {
+  width: 89cm;
+}
+*/
