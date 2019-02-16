@@ -102,5 +102,4 @@ function addMizige(canvas, img) {
   ctx.moveTo(width,0);
   ctx.lineTo(0,height);
   ctx.stroke();
-
 }

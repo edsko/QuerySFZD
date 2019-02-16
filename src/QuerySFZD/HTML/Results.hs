@@ -189,7 +189,7 @@ resultsPerCharacter qry ByCharacter{..} = do
 
 resultsPreferredOnly :: ByCharacter -> PreferredOnly -> Html
 resultsPreferredOnly ByCharacter{..} overlay = do
-    H.textarea $ return ()
+    H.textarea ! A.class_ "mizigeHeader" $ return ()
     H.br
     H.div ! A.id "scroll" $ do
       imgs <- forM (zip bcSearchChars [1..]) $ \((sc, n), i :: Int) ->

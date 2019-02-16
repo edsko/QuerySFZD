@@ -51,17 +51,26 @@ img.mizigeNotFound {
  */
 
 /*
+textarea.mizigeHeader {
+  display: none;
+}
+
 input.mizigeHeader {
   display: none;
 }
 
+div#scroll br {
+  display: none;
+}
+
 canvas.mizige {
-  width: 8.5cm;
-  height: 8.5cm;
-  border: black 1px solid;
+  width: 8cm;
+  height: 8cm;
+  border: black 1px none;
 }
 
 div#scroll {
-  width: 89cm;
+  width: 81cm;
+  border: none;
 }
 */
