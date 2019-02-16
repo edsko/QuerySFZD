@@ -144,7 +144,7 @@ resultsPerCharacter :: Query -> ByCharacter -> Html
 resultsPerCharacter qry ByCharacter{..} = do
     H.p $ do
       fromString $ "Search results for '"
-                ++ concatMap searchCharToString bcSearchChars
+                ++ concatMap searchCharToString (map fst bcSearchChars)
                 ++ "'"
       H.br
       fromString $ "Showing results for calligrapher "
@@ -157,11 +157,14 @@ resultsPerCharacter qry ByCharacter{..} = do
       H.a ! A.href (fromText urlOverlay) $ "Add overlay"
     H.table ! A.class_ "characters" $ do
       H.tr $
-        forM_ bcSearchChars $ \sc ->
+        forM_ bcSearchChars $ \(sc, _n) ->
           H.th $ fromString (searchCharToString sc)
       H.tr $
-        forM_ bcSearchChars $ \sc -> do
-          let matching = bcMatches Map.! sc
+        forM_ bcSearchChars $ \(sc, n) -> do
+          let matching =
+               case queryAvoidRepetition qry of
+                 Just AvoidRepetition -> rotate n (bcMatches Map.! sc)
+                 Nothing              ->           bcMatches Map.! sc
           H.td $ do
             when (null matching && isLetter (searchChar sc)) $ do
               H.img ! A.src "/static/notfound.png"
@@ -189,8 +192,8 @@ resultsPreferredOnly ByCharacter{..} overlay = do
     H.textarea $ return ()
     H.br
     H.div ! A.id "scroll" $ do
-      imgs <- forM (zip bcSearchChars [1..]) $ \(sc, i :: Int) ->
-          case bcMatches Map.! sc of
+      imgs <- forM (zip bcSearchChars [1..]) $ \((sc, n), i :: Int) ->
+          case rotate n (bcMatches Map.! sc) of
             []  -> do
               H.div ! A.style "float: left;" $ do
                 H.input ! A.class_ "mizigeHeader"
@@ -232,7 +235,7 @@ resultsPreferredOnly ByCharacter{..} overlay = do
 data ByCharacter = ByCharacter {
       bcPreferred   :: CalligrapherName
     , bcFallbacks   :: [CalligrapherName]
-    , bcSearchChars :: [SearchChar]
+    , bcSearchChars :: [(SearchChar, Int)] -- ^ Marked for repetitions
     , bcMatches     :: Map SearchChar [Character]
     }
 
@@ -240,7 +243,7 @@ byCharacter :: ResultsPage -> CalligrapherName -> ByCharacter
 byCharacter ResultsPage{..} c = ByCharacter {
       bcPreferred   = c
     , bcFallbacks   = fallbacks queryFallbacks
-    , bcSearchChars = searchCharsToList querySearchChars
+    , bcSearchChars = markRepetitions $ searchCharsToList querySearchChars
     , bcMatches     = Map.fromList $ map (\sc -> (sc, orderedMatches sc)) $
                         searchCharsToList querySearchChars
     }

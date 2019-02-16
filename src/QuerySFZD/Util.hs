@@ -18,6 +18,8 @@ module QuerySFZD.Util (
   , explode'
   , trim
   , indexInOrder
+  , markRepetitions
+  , rotate
     -- * Tagsoup
   , findAttr
   , parseSoupWith
@@ -92,6 +94,26 @@ trim = ltrim . rtrim
 indexInOrder :: [a -> Bool] -> [a] -> [a]
 indexInOrder []     _  = []
 indexInOrder (p:ps) xs = filter p xs ++ indexInOrder ps xs
+
+-- | Mark repeating occurrences
+--
+-- >    markRepetitions "ababca"
+-- > == [('a',0),('b',0),('a',1),('b',1),('c',0),('a',2)]
+markRepetitions :: forall a. Ord a => [a] -> [(a, Int)]
+markRepetitions = go Map.empty
+  where
+    go :: Map a Int -> [a] -> [(a, Int)]
+    go _ []     = []
+    go m (a:as) = case Map.lookup a m of
+                    Nothing -> (a, 0) : go (Map.insert a 1     m) as
+                    Just n  -> (a, n) : go (Map.adjust (+ 1) a m) as
+
+-- Rotate a list
+--
+-- > rotate "abcde" 3 == rotate "abcde" 8 == "deabc"
+rotate :: Int -> [a] -> [a]
+rotate _ [] = []
+rotate n xs = let (ys, zs) = splitAt (n `mod` length xs) xs in zs ++ ys
 
 {-------------------------------------------------------------------------------
   Tagsoup

@@ -26,14 +26,15 @@ type API = Get '[HTML] (HtmlPage "index")
       :<|> "prefer" :> ReqBody '[JSON] Prefer :> Post '[HTML] NoContent
       :<|> "static" :> Raw
 
-type Search = QueryParam' '[Required] "backend"       Backend
-           :> QueryParam' '[Required] "characters"    SearchChars
-           :> QueryParams             "style"         Style
-           :> QueryParam' '[Required] "author"        CalligrapherName
-           :> QueryParam' '[Required] "fallbacks"     Fallbacks
-           :> QueryParam' '[Optional] "skipNotFound"  SkipNotFound
-           :> QueryParam' '[Optional] "saveQuery"     SaveQuery
-           :> QueryParam' '[Optional] "preferredOnly" PreferredOnly
+type Search = QueryParam' '[Required] "backend"         Backend
+           :> QueryParam' '[Required] "characters"      SearchChars
+           :> QueryParams             "style"           Style
+           :> QueryParam' '[Required] "author"          CalligrapherName
+           :> QueryParam' '[Required] "fallbacks"       Fallbacks
+           :> QueryParam' '[Optional] "skipNotFound"    SkipNotFound
+           :> QueryParam' '[Optional] "saveQuery"       SaveQuery
+           :> QueryParam' '[Optional] "preferredOnly"   PreferredOnly
+           :> QueryParam' '[Optional] "avoidRepetition" AvoidRepetition
            :> Get '[HTML] (HtmlPage "results")
 
 api :: Proxy API
@@ -53,3 +54,4 @@ renderQuery Query{..} = toUrlPiece $
       querySkipNotFound
       querySaveQuery
       queryPreferredOnly
+      queryAvoidRepetition

@@ -18,6 +18,7 @@ module QuerySFZD.API.Ours.Query (
   , SkipNotFound(..)
   , SaveQuery(..)
   , PreferredOnly(..)
+  , AvoidRepetition(..)
   , Query(..)
   ) where
 
@@ -156,17 +157,27 @@ data SkipNotFound = SkipNotFound
 data SaveQuery = SaveQuery
   deriving (Show)
 
+-- | Avoid repeating characters in per-character or overlay view
+data AvoidRepetition = AvoidRepetition
+  deriving (Show)
+
 instance FromHttpApiData SkipNotFound where
   parseQueryParam = const (Right SkipNotFound)
 
 instance FromHttpApiData SaveQuery where
   parseQueryParam = const (Right SaveQuery)
 
+instance FromHttpApiData AvoidRepetition where
+  parseQueryParam = const (Right AvoidRepetition)
+
 instance ToHttpApiData SkipNotFound where
   toQueryParam SkipNotFound = "on"
 
 instance ToHttpApiData SaveQuery where
   toQueryParam SaveQuery = "on"
+
+instance ToHttpApiData AvoidRepetition where
+  toQueryParam AvoidRepetition = "on"
 
 {-------------------------------------------------------------------------------
   Only show preferred characters
@@ -203,5 +214,6 @@ data Query = Query {
     , querySkipNotFound     :: Maybe SkipNotFound
     , querySaveQuery        :: Maybe SaveQuery
     , queryPreferredOnly    :: Maybe PreferredOnly
+    , queryAvoidRepetition  :: Maybe AvoidRepetition
     }
   deriving (Show)

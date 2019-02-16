@@ -84,6 +84,10 @@ renderIndex history = HtmlPage $ template True $ do
             H.input ! A.name "skipNotFound"
                     ! A.type_ "checkbox"
             "Require all characters"
+            H.br
+            H.input ! A.name "avoidRepetition"
+                    ! A.type_ "checkbox"
+            "Avoid repeating characters"
         H.tr $ do
           H.td "Only preferred"
           H.td $ do

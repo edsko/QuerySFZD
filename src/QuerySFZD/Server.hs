@@ -44,8 +44,9 @@ query :: Manager
       -> Maybe SkipNotFound
       -> Maybe SaveQuery
       -> Maybe PreferredOnly
+      -> Maybe AvoidRepetition
       -> Handler (HtmlPage "results")
-query mgr cache backend sc styles author fs skip save only = do
+query mgr cache backend sc styles author fs skip save only rep = do
     liftIO $ when (isJust save) $ cacheQuery cache sc
     mRes <- liftIO $ search backend mgr cache qry
     ps   <- liftIO $ getCachedPreferences cache
@@ -65,6 +66,7 @@ query mgr cache backend sc styles author fs skip save only = do
         , querySkipNotFound     = skip
         , querySaveQuery        = save
         , queryPreferredOnly    = only
+        , queryAvoidRepetition  = rep
         }
 
     renderErr :: ServantError -> String
