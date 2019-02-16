@@ -16,5 +16,6 @@ app mgr cache = serve Ours.api $ server mgr cache
 main :: IO ()
 main = do
     mgr <- newManager defaultManagerSettings
+    -- 2663 is number of characters in HSK 6 :D
     withCache $ \cache ->
-      Wai.run 8080 $ app mgr cache
+      Wai.run 2663 $ app mgr cache
