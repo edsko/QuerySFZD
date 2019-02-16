@@ -40,6 +40,12 @@ canvas.mizige {
 div#scroll {
 }
 
+img.mizigeNotFound {
+  width: 3.5cm;
+  height: 3.5cm;
+  border: black 1px solid;
+}
+
 /*
  * mizige: rotated
  */

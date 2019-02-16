@@ -197,7 +197,7 @@ resultsPreferredOnly ByCharacter{..} overlay = do
                         ! A.value (fromString (searchCharToString sc))
                 H.br
                 H.img ! A.src "/static/notfound.png"
-                      ! A.class_ "mizige"
+                      ! A.class_ "mizigeNotFound"
               return Nothing
             (ch:_) -> do
               let name = fromString $ calligrapherNameToString (charCalligrapher ch)
