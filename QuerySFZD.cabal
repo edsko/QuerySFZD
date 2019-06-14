@@ -51,7 +51,8 @@ executable QuerySFZD
                      , serialise
                      , servant
                      , servant-blaze >=0.9
-                     , servant-client
+                       -- API change in 0.16. Don't know how hard to fix.
+                     , servant-client <0.16
                      , servant-server
                      , tagsoup
                      , text
